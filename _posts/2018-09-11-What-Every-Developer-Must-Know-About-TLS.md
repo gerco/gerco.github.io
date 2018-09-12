@@ -3,8 +3,6 @@ layout: post
 title: What every developer must know about TLS (no excuses) 
 ---
 
-## Introduction
-
 Transport Layer Security (TLS) or, as many still call it: SSL, is a cornerstone technology of the internet. It enables internet banking, many b2b applications and secure communications with your doctor. With the advent of free certificates from [Let's Encrypt](https://letsencrypt.org), there are no more excuses for websites not to support it. As a result many websites have adopted HTTPS, the secure version of HTTP (or HTTP over TLS). Sadly, many website administrators and developers don't quite understand how it all works and stumble through tutorials, settings, certificate files and checkboxes hoping to get it to work. When it finally works, they leave it all alone until it inevitably breaks and the process of trial and error begins anew.
 
 To prevent too many people from making the same mistakes over and over again, I decided to write this article. Much of this is old news to many people but it's my hope that there is a nugget of missed understanding here and there that will be useful. This article is a high-level overview and in no way attempts to convey technical details about the underlying protocols.
@@ -58,11 +56,15 @@ A certificate also contains validity dates, an **issuer name** and a **signature
 
 In order for a client to trust a certificate it must be valid at the time of connection; it must belong to the server the client is trying to connect to and; it must have been signed by a certificate authority the client trusts. Every TLS client is configured with a **trust store**, a list of certificate authorities that it trusts. Only certificates signed by a trusted authority will be accepted.
 
-For web browsers, the trust store can be built in to the operating system (Internet Explorer, Google Chrome or Safari) or the browser vendor can provide its own (Firefox). Typically, there exists some management interface to add and remove certificates manually (Keychain Access on the Mac, the Certificate Manager SMC cnap-in) on Windows but this store is most often maintained by the operating system or browser vendor. For non-web browser applications, the trust store is often configured separately. However the setup for any particular operating system or application, there is always a trust store containing the trusted certification authorities.
+For web browsers, the trust store can be built in to the operating system (Internet Explorer, Google Chrome or Safari) or the browser vendor can provide its own (Firefox). Typically, there exists some management interface to add and remove certificates manually (Keychain Access on the Mac, the Certificate Manager SMC snap-in) on Windows but this store is most often maintained by the operating system or browser vendor. For non-web browser applications, the trust store is often configured separately. However the setup for any particular operating system or application, there is always a trust store containing the trusted certification authorities.
 
 Let's examine a real world certificate. For illustration purposes, we'll use the certificate for github.com:
+
 ![github.com certificate]({{ site.baseurl }}/images/github-dot-com-certificate.png)
 
+This certificate's chain of trust is a little more complicated than the above description. The certificate for "github.com" was signed by the issuer "DigiCert SHA2 Extended Validation CA", which in turn is signed by the issuer "DigiCert High Assurance EV Root CA". In many situations, certificate authorities use "intermediate" certificates. These intermediate certificates often have shorter validity dates than their main certificate and are only used for signing certain types of certificates (in this case only for [Extended Validation](https://en.wikipedia.org/wiki/Extended_Validation_Certificate) certificates, a type of certificate with strict validation of the company it represents).
+
+When connecting to github.com, the server will send us **both** its own certificate and also the above intermediate certificate. It may send more, enough to form a "chain of trust" all the way up to a certificate that is included in the client's trust store. In order for a client to check the validity of the server's certificate it has to be able to check the validity of all certificates leading up to a trusted root certificate (the ones in its trust store). When connecting to github.com, a web browser will first check whether the github.com certificate's signature is valid and then move up the chain to the intermediate certificate (in this case "DigiCert SHA2 Extended Validation CA"). It will then validate that intermediate certificate's signature and notice that it's signed by the trusted root "DigiCert High Assurance EV Root CA". This root certificate is explicitly trusted because it's included in the browser's trust store.
 
 ## Useful commands
 
