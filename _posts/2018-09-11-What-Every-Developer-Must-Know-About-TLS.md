@@ -82,8 +82,9 @@ In order for a server to use TLS, it needs two things: a certificate and the cor
 
 Once the certificate and private key are both available, they can be entered into the server configuration. In many cases, the certificate issuer will also provide a "certificate chain" file or a separate intermediate certificate for download. The server configuration must contain all certificates required to link the server certificate to a well-known trusted root.
 
-Depending on your server software, you may have to combine the server certificate and any intermediates into a single file or they can be configured as separate files (sometimes called a certificate chain).
+Depending on your server software, you may have to combine the server certificate and any intermediates into a single file or they can be configured as separate files. For more information on how to configure some often used server software, refer to the following links: 
 
+[Apache 2.4](https://httpd.apache.org/docs/2.4/ssl/ssl_howto.html) | [NGINX](http://nginx.org/en/docs/http/configuring_https_servers.html) | [Microsoft IIS 8](https://support.microsoft.com/en-us/help/324069/how-to-set-up-an-https-service-in-iis) | [Postfix](http://www.postfix.org/TLS_README.html) | [Qmail](http://www.qmailtoaster.net/ssl.html) | [Microsoft Exchange](https://docs.microsoft.com/en-us/powershell/module/exchange/encryption-and-certificates/enable-exchangecertificate?view=exchange-ps)
 
 ## Common issues
 
