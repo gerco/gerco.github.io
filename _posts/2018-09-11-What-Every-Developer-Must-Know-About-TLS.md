@@ -1,13 +1,15 @@
 ---
 layout: post
-title: What every developer must know about TLS (no excuses) 
+title: What every developer must know about TLS
 ---
 
-Transport Layer Security (TLS) or, as many still call it: SSL, is a cornerstone technology of the internet. It enables internet banking, many b2b applications and secure communications with your doctor. With the advent of free certificates from [Let's Encrypt](https://letsencrypt.org), there are no more excuses for websites not to support it. As a result many websites have adopted HTTPS, the secure version of HTTP (or HTTP over TLS). Sadly, many website administrators and developers don't quite understand how it all works and stumble through tutorials, settings, certificate files and checkboxes hoping to get it to work. When it finally works, they leave it all alone until it inevitably breaks and the process of trial and error begins anew.
+Transport Layer Security (TLS) or, as many still call it: SSL, is a cornerstone technology of the internet. It enables internet banking, many b2b applications and secure communications with your doctor. With the advent of free certificates from [Let's Encrypt](https://letsencrypt.org), there are no more excuses for websites not to support it.
+
+As a result of the increasing adoption of HTTPS, the secure version of HTTP (or HTTP over TLS). Many developers are forced to learn how to configure their web servers for TLS.  Many of them don't quite understand how it all works and stumble through tutorials, settings, certificate files and checkboxes hoping to get it to work. When it finally does, they leave it all alone until it inevitably breaks and the process of trial and error begins anew.
 
 To prevent too many people from making the same mistakes over and over again, I decided to write this article. Much of this is old news to many people but it's my hope that there is a nugget of missed understanding here and there that will be useful. This article is a high-level overview and in no way attempts to convey technical details about the underlying protocols.
 
-## TITLE HERE
+## TLS 101
 
 TLS is a communications protocol with two goals: authentication and privacy. The goal is to know who you're talking to and to make sure nobody else can listen in on the conversation. To understand how TLS achieves these goals, we first have to go over some basics.
 
@@ -26,8 +28,6 @@ To learn more about RSA and other asymmetric crypto systems, see [Public-key cry
 Privacy by itself is not enough for secure communications. An eavesdropper may not be able to listen in on the connection after it's been established, but it's still perfectly possible for a [Man in the Middle](https://en.wikipedia.org/wiki/Man-in-the-middle_attack) (MITM) to intercept the connection and establish key pairs with both sides of the connection. The MITM is then able to decrypt all traffic from Alice and re-encrypt it before sending it off to Bob. Alice and Bob are none the wiser without the second important property of TLS: authentication.
 
 In TLS, authentication is achieved by using certificates (see [X.509](https://en.wikipedia.org/wiki/Certificate_authority)). A certificate is simply a **public key** bundled with some information about its owner that is signed by a trusted third party (a [certificate authority](https://en.wikipedia.org/wiki/Certificate_authority)). Think of it like a passport, a passport can be used to prove someone's identity because it was issued by a trusted third party (that person's government).
-
-Alice can prove that her certificate (that contains her public key) is hers because she has the corresponding private key. A man in the middle cannot pretend to be Alice because they do not have Alice's private key.
 
 ## Basics of a TLS connection
 
@@ -64,7 +64,34 @@ Let's examine a real world certificate. For illustration purposes, we'll use the
 
 This certificate's chain of trust is a little more complicated than the above description. The certificate for "github.com" was signed by the issuer "DigiCert SHA2 Extended Validation CA", which in turn is signed by the issuer "DigiCert High Assurance EV Root CA". In many situations, certificate authorities use "intermediate" certificates. These intermediate certificates often have shorter validity dates than their main certificate and are only used for signing certain types of certificates (in this case only for [Extended Validation](https://en.wikipedia.org/wiki/Extended_Validation_Certificate) certificates, a type of certificate with strict validation of the company it represents).
 
-When connecting to github.com, the server will send us **both** its own certificate and also the above intermediate certificate. It may send more, enough to form a "chain of trust" all the way up to a certificate that is included in the client's trust store. In order for a client to check the validity of the server's certificate it has to be able to check the validity of all certificates leading up to a trusted root certificate (the ones in its trust store). When connecting to github.com, a web browser will first check whether the github.com certificate's signature is valid and then move up the chain to the intermediate certificate (in this case "DigiCert SHA2 Extended Validation CA"). It will then validate that intermediate certificate's signature and notice that it's signed by the trusted root "DigiCert High Assurance EV Root CA". This root certificate is explicitly trusted because it's included in the browser's trust store.
+When connecting to github.com, the server will send us **both** its own certificate and also the above intermediate certificate. It may send more, enough to form a "chain of trust" all the way up to a certificate that is included in the client's trust store. In order for a client to check the validity of the server's certificate it has to be able to check the validity of all certificates leading up to a trusted root certificate (the ones in its trust store). 
+
+When connecting to github.com, a web browser will:
+
+1. check whether the "*github.com*" certificate's signature is valid;
+2. move up the chain to the intermediate certificate (in this case "*DigiCert SHA2 Extended Validation CA*"), and check its validity dates and signature
+3. lastly, it encounters the certificate "*DigiCert High Assurance EV Root CA*". This root certificate is explicitly trusted because it's included in the browser's trust store.
+
+
+## Configuring your server
+
+In order for a server to use TLS, it needs two things: a certificate and the corresponding private key. How to obtain these depends on your certificate issuer, there are two common approaches:
+
+1. The certificate issuer generates a key and certificate. These are offered for download to the server and can be installed directly. This process is convenient, but less secure than the alternative.
+2. The server administrator generates a key pair themselves and sends the issuer a *certificate request*. The issuer converts this request into a certificate and offers it for download. This approach is more secure since nobody but the server administrator ever gets to see the private key.
+
+Once the certificate and private key are both available, they can be entered into the server configuration. In many cases, the certificate issuer will also provide a "certificate chain" file or a separate intermediate certificate for download. The server configuration must contain all certificates required to link the server certificate to a well-known trusted root.
+
+Depending on your server software, you may have to combine the server certificate and any intermediates into a single file or they can be configured as separate files (sometimes called a certificate chain).
+
+
+## Common issues
+
+### Server Name Indication
+
+### TLS Version Conflicts
+
+### Mismatched parameters
 
 ## Useful commands
 
