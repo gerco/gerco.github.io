@@ -88,13 +88,24 @@ Depending on your server software, you may have to combine the server certificat
 
 ## Common issues
 
-### Server Name Indication
-
 ### TLS Version Conflicts
 
 ### Mismatched parameters
 
 ## Useful commands
 
-## Troubleshooting
+`openssl x509 -in certificate.crt -text`
 
+Print out a certificate in human readable form. Append `-noout` to suppress the base64 form of the certificate.
+
+`openssl verify -CAfile bundle.crt certificate.crt`
+
+Verify a certificate chain using a set of certificates in `bundle.crt` (a file of concatenated, PEM formatted trusted certificates).
+
+`openssl s_client -connect domain1.com:443`
+
+Connect to a server and print out debug information (including the server's certificate in base64 format). Append `-showcerts` to print any additional certificates the server may be sending as well. Use `-servername` to enable the SNI extension and specify the server name to send.
+
+`openssl x509 -in certificate.cer -inform der > certificate.crt`
+
+Convert a certificate from DER format to PEM format.
