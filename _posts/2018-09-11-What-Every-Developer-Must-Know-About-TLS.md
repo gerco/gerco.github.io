@@ -106,6 +106,6 @@ Verify a certificate chain using a set of certificates in `bundle.crt` (a file o
 
 Connect to a server and print out debug information (including the server's certificate in base64 format). Append `-showcerts` to print any additional certificates the server may be sending as well. Use `-servername` to enable the SNI extension and specify the server name to send.
 
-`openssl x509 -in certificate.cer -inform der > certificate.crt`
+`openssl x509 -in certificate.cer -inform der -out certificate.crt`
 
 Convert a certificate from DER format to PEM format.
