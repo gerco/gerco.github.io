@@ -3,9 +3,9 @@ layout: post
 title: Server Name Indication
 ---
 
-Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In YEAR, an extension was added to the protocol (Server Name Indication, SNI) to resolve this issue and allow a server to serve the correct certificate for the host name a client is expecting.
+Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In 2003, an extension was added to the protocol (Server Name Indication, SNI) to resolve this issue and allow a server to serve the correct certificate for the host name a client is expecting ([RFC 3546](https://www.ietf.org/rfc/rfc3546.txt)).
 
-There is still a lot of software around that does not support SNI so servers still may have to deal with clients that do and do not support SNI. They do this by configuring one certificate for each domain name for clients that support SNI and a single certificate with an alternative name for each of the configured domains for clients that don't. For example: If a server is responsible for three domain names:
+There is still some old software around that does not support SNI so servers still may have to deal with clients that do and do not support SNI. They do this by configuring one certificate for each domain name for clients that support SNI and a single certificate with an alternative name for each of the configured domains for clients that don't. For example: If a server is responsible for three domain names:
 
 - domain1.com
 - domain2.com
