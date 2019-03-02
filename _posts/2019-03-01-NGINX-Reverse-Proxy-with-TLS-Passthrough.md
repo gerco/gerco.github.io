@@ -7,7 +7,7 @@ Like many other developers and tinkerers, I run a few services on my home server
 
 In the last few years, more and more services now natively support Let's Encrypt and that makes it very easy to protect them with a TLS certificate. To use the built-in Let's Encrypt support for those services it's often necessary for them to be the only service on port 443. They manage their own keys and certificates so it's difficult to host more than one service on any IPv4 address.
 
-NGINX has a convenient feature that allows proxied services to directly manage their own certificates without needing the proxy server to be aware of the encryption keys: streams. The feature can even be combined with the regular https proxy for maximum flexibility:
+NGINX has a convenient feature that allows proxied services to directly manage their own certificates without needing the proxy server to be aware of the encryption keys: [streams](http://nginx.org/en/docs/stream/ngx_stream_core_module.html). The feature can even be combined with the regular https proxy for maximum flexibility:
 
 The relevant configuration is as follows:
 
