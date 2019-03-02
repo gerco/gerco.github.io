@@ -49,10 +49,10 @@ server {
 }
 ```
 
-This is a hypothetical configuration for a [FreePBX](https://www.freepbx.org) server that's managing its own certificate and a [Nextcloud](https://nextcloud.com) instance where the certificate is managed by the reverse proxy server. The DNS A records for both pbx.mydomain.com and cloud.mydomain.com are both pointing to the same IPv4 address.
+This is a hypothetical configuration for a [FreePBX](https://www.freepbx.org) server that's managing its own certificate and a [Nextcloud](https://nextcloud.com) instance where the certificate is managed by the reverse proxy server. The DNS A records for pbx.mydomain.com and cloud.mydomain.com are both pointing to the same IPv4 address.
 
-The `stream` section reads the server name the TLS client wants to connect to and then decides to which backend the connection will be forwarded. If the client wants to connect to "pbx.mydomain.com", the connection is proxied directly to the FreePBX server at 10.1.2.3. This allows the FreePBX server to terminate the TLS connection and be in complete control of its certifiates and keys.
+The `stream` section reads the server name the TLS client wants to connect to and then decides to which `upstream` the connection will be forwarded. If the client wants to connect to "pbx.mydomain.com", the connection is proxied directly to the FreePBX server at 10.1.2.3. This allows the FreePBX server to terminate the TLS connection and be in complete control of its certificates and encryption keys.
 
-If the client wants to connect to a different domain name, the connection is proxied to localhost:1443 where the second configuration comes in. All the `server` sections that would normally be defined to listen on port 443 are listening to port 1443 instead. Because the `stream` server forwards all unknown domain names to this port, all domains configured as virtual hosts will work as normal.
+If the client wants to connect to a different domain name, the connection is proxied to localhost:1443 where the second configuration comes in. All the `server` sections that would normally be defined to listen on port 443 are listening to port 1443 instead. Since the `stream` server forwards all unknown domain names to this port, all domains configured as virtual hosts will work as normal.
 
 This approach does have a serious downside: The applications behind the reverse proxy will lose the ability to determine the real IP address of their clients. All connections to the proxied services will be made by the reverse proxy so they will only see the proxy's address. This can normally be worked around by using the `X-Forwarded-For` header, but due to the use of the `stream` server as the point of entry, this is no longer possible.
