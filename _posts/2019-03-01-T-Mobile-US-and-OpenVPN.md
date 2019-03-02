@@ -9,8 +9,6 @@ After much testing and googling around, I finally found that the issue had to do
 
 Lowering the maximum packet size via [OpenVPN configuration](https://openvpn.net/community-resources/reference-manual-for-openvpn-2-4/) turned out to be the solution to my problem. Simply add the following parameter to your client's .ovpn file to lower the MTU for the connection:
 
-```
-mssfix 1400
-```
+`mssfix 1400`
 
 The default value is 1450, which resulted in packets that were too large. Setting this to 1400 solved my problem. You may need a lower value or be able to use a higher one depending on various factors, your mileage may vary and some experimentation may be required to determine the correct value for your situation.
