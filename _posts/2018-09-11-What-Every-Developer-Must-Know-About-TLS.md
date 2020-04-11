@@ -33,7 +33,7 @@ In TLS, authentication is achieved by using certificates (see [X.509](https://en
 
 A TLS connection begins when a client (i.e. a web browser) sends a [`Client Hello`](https://tools.ietf.org/html/rfc5246#section-7.4.1.2) message to a server (a web server). This message contains some basic information about the connection the client wants to establish: the protocol versions supported, a list of supported encryption protocols, hashing algorithms, etc. It contains everything the server could possibly want to know about what the client supports so it's free to choose the most secure combination of algorithms both client and server support.
 
-After receiving the `Client Hello`, the server will reply with its own [`Server Hello`] (https://tools.ietf.org/html/rfc5246#section-7.4.1.3) message that informs the client of the chosen encryption- and hashing algorithms, various parameters and the all important **Server Certificate**.
+After receiving the `Client Hello`, the server will reply with its own [`Server Hello`](https://tools.ietf.org/html/rfc5246#section-7.4.1.3) message that informs the client of the chosen encryption- and hashing algorithms, various parameters and the all important **Server Certificate**.
 
 The server certificate contains the server's public key and information about the server that owns that key (such as the company that owns it, etc). Most importantly, it contains the server's name (called the "Common Name" or CN). Any TLS client *must* compare the name in the certificate with the name they were trying to connect to and reject the connection if they don't match to prevent man in the middle attacks.
 
