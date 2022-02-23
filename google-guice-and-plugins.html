@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Google Guice and plugins - gerco.dev </title>
+        <meta name="description" content="While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders. Lets look at the problem first. Guice favors constructor&hellip;" />
+         
+        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <link rel="canonical" href="https://gerco.dev/google-guice-and-plugins.html">
+        
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+
+        
+        <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
+        <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/google-guice-and-plugins.html"},"headline":"Google Guice and plugins","datePublished":"2012-06-27T19:03","dateModified":"2022-02-22T19:04","description":"While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders. Lets look at the problem first. Guice favors constructor&hellip;","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        
+        
+    </head>
+    <body>
+        <div class="site-container">
+   <header class="top" id="js-header">
+      <a class="logo" href="https://gerco.dev/">
+            gerco.dev
+      </a>
+   </header>
+<main>
+      <article class="post">
+         <div class="hero">
+             
+             
+            <header class="hero__content">
+               <div class="wrapper">
+                     <div class="post__meta">
+                        <time datetime="2012-06-27T19:03">
+                              June 27, 2012
+                        </time>
+                     </div>
+                  <h1>
+                     Google Guice and plugins
+                  </h1>
+               </div>
+            </header>
+         </div>
+
+         <div class="wrapper post__entry">           
+            <p>While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders.</p>
+<p>Lets look at the problem first. Guice favors constructor injection and that often results in big, ugly constructors with dozens of arguments. In my experience this mostly happens when constructing GUI containers with a lot of “static” items (menus, tabs, lists of configuration pages, etc). These lists of items are not truly static because we would like to be able to extend them through plugins, for example.</p>
+<p>When we follow a naive approach, a constructor for a JFrame that holds a bunch of tabs may look like this:</p>
+<pre><code class="language-java">@Inject
+public MainFrame(
+    Panel1 p1, Panel2 p2, Panel3 p3, Panel4 p4,
+    Panel5 p5, Panel6 p6, Panel7 p7, Panel8 p8)
+{
+    addTab(p1);
+    addTab(p2);
+    addTab(p3);
+    addTab(p4);
+    addTab(p5);
+    addTab(p6);
+    addTab(p7);
+    addTab(p8);
+}
+</code></pre>
+<p>This has the advantage that it’s perfectly clear which tabs this frame will host and in which order they will appear. Aside from that, it would be easy to add some code to listen to application events and enable and disable specific tabs when required. This code does lack a few things though: It’s a lot of work to add tabs to it and it doesn’t allow for adding more tabs after the application has been distributed (plugins).</p>
+<p>To allow for adding tabs we need to solve several problems:</p>
+<ul>
+<li>Allow for addition of tabs</li>
+<li>Allow tab order to be determined by plugins or the user</li>
+<li>Provide some way for tabs to enable/disable based on application state</li>
+</ul>
+<p>Lets start one at a time and first make the list of tabs dynamic from the point of view of the frame that will host them:</p>
+<pre><code class="language-java">@Inject
+public MainFrame(Set&lt;JComponent&gt; panels)
+{
+    for(JComponent panel: panels)
+    {
+        addTab(panel);
+    }
+}
+</code></pre>
+<p>Now we are not injecting each tab separately, but we inject instead a Set of tabs. This removes the requirement for the frame to know exactly which tabs exist and makes the code somewhat simpler. We still have to specify which tabs go in this frame though. This is done in the Guice Module:</p>
+<pre><code class="language-java">public class UIModule extends AbstractModule {
+
+    @Override
+    protected void configure() {
+        Multibinder&lt;JComponent&gt; panels = Multibinder.newSetBinder(binder(), JComponent.class);
+        panels.addBinding().to(Panel1.class);
+        panels.addBinding().to(Panel2.class);
+        panels.addBinding().to(Panel3.class);
+        panels.addBinding().to(Panel4.class);
+        panels.addBinding().to(Panel5.class);
+        panels.addBinding().to(Panel6.class);
+        panels.addBinding().to(Panel7.class);
+        panels.addBinding().to(Panel8.class);
+    }
+}
+</code></pre>
+<p>So what has really changed? We moved the list of panels from one piece of Java code to another piece of Java code. It’s still Java code and this didn’t help one bit to implement a plugin architecture.</p>
+<p>This is where the multi-module aspect of the Multibinder comes in. When a different Guice module defines a binder for the same type (in this case <code>Set&lt;JComponent&gt;</code>), they will be merged. At runtime, there will only be one <code>Set&lt;JComponent&gt;</code> and all tabs from all Modules will be presented in the frame.</p>
+<p><code>Set&lt;JComponent&gt;</code> is a little to generic of a type to be using for this purpose though. We want to do more with this. We need (at a minimum) to specify a name and a way to get a reference to the actual <code>JComponent</code> so lets start by defining an interface:</p>
+<pre><code class="language-java">public interface UITab {
+    public String getUITabName();
+    public JComponent getUITabComponent();
+}
+</code></pre>
+<p>This interface defines a few methods we’ll need to display our tabs. <code>getUITabName</code> should return the display name for the tab and <code>getUITabComponent</code> is expected to return a reference to the actual UI component.</p>
+<p>Each Panel class can now implement this interface, like so:</p>
+<pre><code class="language-java">public class Panel1 extends JPanel implements UITab {
+    public String getUITabName() {
+        return &quot;Panel 1&quot;;
+    }
+
+    public JComponent getUITabComponent() {
+        return this;
+    }
+}
+</code></pre>
+<p>Each Panel can now be defined in its own module like this:</p>
+<pre><code class="language-java">public class Panel1Module extends AbstractModule {
+    @Override
+    protected void configure() {
+        Multibinder&lt;UITab&gt; panels = Multibinder.newSetBinder(binder(), UITab.class);
+        panels.addBinding().to(Panel1.class);
+    }
+}
+</code></pre>
+<p>Now that each of the panels is defined in its own module, we can split them out into separate projects (plugins). Each Panel can get its own jar file. All we still need is a way for the main application to detect the available plugins and load them. The <a href="http://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html">ServiceLoader</a> class is a good possibility. Some classpath detection of an appliction specific plugin descriptor or an XML file listing all installed plugins are also possible.</p>
+            
+         </div>
+
+            <footer class="wrapper post__footer">
+
+
+
+                  <div class="post__share">
+                        <a
+                           href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgerco.dev%2Fgoogle-guice-and-plugins.html"
+                           class="js-share facebook"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#facebook"/>
+                           </svg>
+                           <span>Facebook</span>
+                        </a>
+                     
+                        <a
+                           href="https://twitter.com/share?url=https%3A%2F%2Fgerco.dev%2Fgoogle-guice-and-plugins.html&amp;via=gdries&amp;text=Google%20Guice%20and%20plugins"
+                           class="js-share twitter"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#twitter"/>
+                           </svg>
+                           <span>Twitter</span>
+                        </a>
+                     
+                     
+                     
+                        <a
+                           href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgerco.dev%2Fgoogle-guice-and-plugins.html"
+                           class="js-share linkedin"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#linkedin"/>
+                           </svg>
+                           <span>LinkedIn</span>
+                        </a>
+                     
+                     
+                  </div>
+
+            </footer>
+      </article>
+
+            <nav class="post__nav">
+               <div class="post__nav-inner">
+                     <div class="post__nav-next">
+                        <a href="https://gerco.dev/van-icloud-bug-naar-nieuwe-iphone.html" class="invert post__nav-link" rel="next">
+                           <span>Next</span>
+                           Van iCloud bug naar nieuwe iPhone
+                        </a>
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-next"/>
+                        </svg>
+                     </div>
+               </div>
+            </nav>
+
+
+
+
+</main>
+<footer class="footer">
+        <div class="footer__copyright">
+            <p>Powered by Publii</p>
+        </div>
+       <button class="footer__bttop js-footer__bttop" aria-label="Back to top"> 
+           <svg>
+               <title>Back to top</title>
+               <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#toparrow" />
+           </svg>
+       </button>   
+</footer>
+</div>
+
+<script>
+   window.publiiThemeMenuConfig = {    
+        mobileMenuMode: 'sidebar',
+        animationSpeed: 300,
+        submenuWidth: 'auto',
+        doubleClickTime: 500,
+        mobileMenuExpandableSubmenus: true, 
+        relatedContainerForOverlayMenuSelector: '.top',
+   };
+</script>
+<script defer src="https://gerco.dev/assets/js/scripts.min.js?v=48e9576b9741cf2a93ab25c5689c9f5d"></script>
+    <script>        
+        var images = document.querySelectorAll('img[loading]');
+
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }
+    </script>
+
+
+</body>
+</html>

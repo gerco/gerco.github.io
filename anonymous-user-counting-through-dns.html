@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Anonymous user counting through DNS - gerco.dev </title>
+        <meta name="description" content="Imagine the following scenario: You are maintaining a free application and you have a fair number of users, but you don’t know exactly how many. Because you want to understand your user base a bit better, you would like to count the number of users." />
+         
+        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <link rel="canonical" href="https://gerco.dev/anonymous-user-counting-through-dns.html">
+        
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+
+        
+        <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
+        <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/anonymous-user-counting-through-dns.html"},"headline":"Anonymous user counting through DNS","datePublished":"2014-10-27T19:07","dateModified":"2022-02-22T19:07","description":"Imagine the following scenario: You are maintaining a free application and you have a fair number of users, but you don’t know exactly how many. Because you want to understand your user base a bit better, you would like to count the number of users.","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        
+        
+    </head>
+    <body>
+        <div class="site-container">
+   <header class="top" id="js-header">
+      <a class="logo" href="https://gerco.dev/">
+            gerco.dev
+      </a>
+   </header>
+<main>
+      <article class="post">
+         <div class="hero">
+             
+             
+            <header class="hero__content">
+               <div class="wrapper">
+                     <div class="post__meta">
+                        <time datetime="2014-10-27T19:07">
+                              October 27, 2014
+                        </time>
+                     </div>
+                  <h1>
+                     Anonymous user counting through DNS
+                  </h1>
+               </div>
+            </header>
+         </div>
+
+         <div class="wrapper post__entry">           
+            <p>Imagine the following scenario:
+You are maintaining a free application and you have a fair number of users, but you don’t know exactly how many. Because you want to understand your user base a bit better, you would like to count the number of users. This is the situation I found myself in recently.</p>
+<h3 id="requirements">Requirements</h3>
+<p>My requirements for a system like this were as follows:</p>
+<ul>
+<li>Must work through restrictive corporate proxies;</li>
+<li>Collect the minimum amount of data possible;</li>
+<li>Do not annoy users;</li>
+<li>Little application size increase;</li>
+<li>Count number of users as accurately as feasible.</li>
+</ul>
+<p>I investigated a few options, most of those were unacceptable to me for various reasons. They would either bloat my application, collect too much data or cause issues with the user’s network configuration. A lot of my users are behind a corporate proxy and my application is implemented in Java. Those of you who are familiar with Java will know that HTTP requests will - more or less randomly - pop up a proxy authentication dialog. Since I didn’t want to annoy my users I needed another solution.</p>
+<p>I came up with a solution that fulfills most of the above requirements:</p>
+<ul>
+<li>Works through proxies because the application never makes a request to any server outside the corporate network;</li>
+<li>Collects only a random unique id that gets created on application startup. No user data is included whatsoever, not even the user’s IP address.</li>
+<li>Cannot pop up authentication dialogs or cause application delays due to firewalls restricting access to outside;</li>
+<li>Does not require any new libraries since all the code is already built in to in every OS.</li>
+</ul>
+<p>This is how it works:</p>
+<ul>
+<li>On application startup, the application creates a random uuid;</li>
+<li>The application then attempts to resolve $uuid.stats.domainname.tld through DNS</li>
+<li>The DNS zone file for domainname.tld specifies a custom DNS server for stats.domainname.tld.</li>
+<li>stats.domainname.tld is running a custom DNS server that logs queries to $uuid.stats.domainname.tld.</li>
+</ul>
+<p>There you have it, just count the unique ids in the DNS server’s log file and you’re done. This even has the added bonus of working on machines that have no internet access for security reasons. Even though they cannot connect anywhere outside the corporate network, they mostly still can resolve DNS queries! Now on to the implementation, which is surprisingly simple:</p>
+<h3 id="client">Client</h3>
+<p>In the client application, all you need to do is generate a unique id and resolve it. In Java, this can be done as follows:</p>
+<pre><code class="language-java">public void getLatestVersionNumber() {
+  Hashtable&lt;String, String&gt; env = new Hashtable&lt;String, String&gt;();    
+  env.put(Context.INITIAL_CONTEXT_FACTORY, &quot;com.sun.jndi.dns.DnsContextFactory&quot;);
+  DirContext ctx = new InitialDirContext(env);
+  Attributes attrs = ctx.getAttributes(uuid + &quot;.stats.domainname.tld&quot;, new String[] { &quot;TXT&quot; }); 
+  Attribute attr = attrs.get(&quot;TXT&quot;);
+  return attr.get().toString();
+}
+</code></pre>
+<p>In this case, I’m retrieving the TXT record, since that will allow my custom DNS server to be able return some information to the user, like the most recent version of the application (to alert the user an update is available, for example).</p>
+<p>###DNS configuration
+The client code above causes the application to send a DNS request to resolve the domain name asked for: $uuid.stats.domainname.tld. In order to resolve this, the operating system will first need to resolve (in order): tld, dominate.tld and finally stats.domainname.tld. We can’t (or don’t want to) control which DNS server serves .tld or domainname.tld so we enter the following records to direct queries for *.stats.domainname.tld to our custom server:</p>
+<pre><code>; Set nameserver for stats.domainname.tld. to stats-ns.domainname.tld
+stats     IN     NS     stats-ns
+
+; Set IP address for stats-ns.domainname.tld. to 1.2.3.4
+stats-ns  IN     A     1.2.3.4
+</code></pre>
+<p>Replace 1.2.3.4 with the IP address of the machine that you will be running your custom DNS server on. You will need root-access to that server since a DNS server must run on port 53. A shared hosting server will not work.</p>
+<p>###DNS Server
+On to the meat of the matter. Since I like experimenting with programming languages and my current language-du-jour is <a href="http://golang.org">Go</a>, I’m implementing this server in Go. I used the excellent <a href="https://github.com/miekg/dns">dns</a> library from <a href="http://miek.nl">Miek Gieben</a>. The server is based on his “reflect” example (with most of the code removed). The only interesting part is below:</p>
+<pre><code class="language-go">func (h DNSHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+     m := new(dns.Msg)
+     m.SetReply(r)
+
+     for _, q := range r.Question {
+          // We only respond to TXT queries. Anything else does not exist on this DNS server
+          if q.Qtype == dns.TypeTXT {
+               var responseText string
+
+               if strings.HasSuffix(q.Name, &quot;.&quot;+h.config.DomainName) {
+                    uuid := q.Name[:strings.Index(q.Name, &quot;.&quot;)]
+                    c := *newCheckIn(uuid, time.Now())
+                    saveCheckin(c)
+
+                    responseText = getLatestApplicationVersion()
+               } else {
+                    // The query is for config.DomainName, reply nothing
+               }
+
+               if len(responseText) &gt; 0 {
+                    t := new(dns.TXT)
+                    t.Hdr = dns.RR_Header{Name: q.Name, Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: 3600}
+                    t.Txt = []string{responseText}
+                    m.Answer = append(m.Answer, t)
+               }
+          }
+     }
+
+     w.WriteMsg(m)
+}
+</code></pre>
+<p>This simplified code stores the unique ids received and replies with the latest application version. </p>
+<p>That’s all there is to it! Completely anonymous user counting without collecting any personal data, not even the user’s IP address. Naturally this only counts instances of the application and not the number of humans using it, but this is as close as you’re likely going to get.</p>
+            
+         </div>
+
+            <footer class="wrapper post__footer">
+
+
+
+                  <div class="post__share">
+                        <a
+                           href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgerco.dev%2Fanonymous-user-counting-through-dns.html"
+                           class="js-share facebook"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#facebook"/>
+                           </svg>
+                           <span>Facebook</span>
+                        </a>
+                     
+                        <a
+                           href="https://twitter.com/share?url=https%3A%2F%2Fgerco.dev%2Fanonymous-user-counting-through-dns.html&amp;via=gdries&amp;text=Anonymous%20user%20counting%20through%20DNS"
+                           class="js-share twitter"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#twitter"/>
+                           </svg>
+                           <span>Twitter</span>
+                        </a>
+                     
+                     
+                     
+                        <a
+                           href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgerco.dev%2Fanonymous-user-counting-through-dns.html"
+                           class="js-share linkedin"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#linkedin"/>
+                           </svg>
+                           <span>LinkedIn</span>
+                        </a>
+                     
+                     
+                  </div>
+
+            </footer>
+      </article>
+
+            <nav class="post__nav">
+               <div class="post__nav-inner">
+                     <div class="post__nav-prev">
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-prev"/>
+                        </svg>
+
+                        <a href="https://gerco.dev/van-icloud-bug-naar-nieuwe-iphone.html" class="invert post__nav-link" rel="prev">
+                           <span>Previous</span>
+                           Van iCloud bug naar nieuwe iPhone
+                        </a>
+                     </div>
+                     <div class="post__nav-next">
+                        <a href="https://gerco.dev/netatalk-318-on-ubuntu-1510-via-ppa.html" class="invert post__nav-link" rel="next">
+                           <span>Next</span>
+                           Netatalk 3.1.8 on Ubuntu 15.10 via PPA
+                        </a>
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-next"/>
+                        </svg>
+                     </div>
+               </div>
+            </nav>
+
+
+
+
+</main>
+<footer class="footer">
+        <div class="footer__copyright">
+            <p>Powered by Publii</p>
+        </div>
+       <button class="footer__bttop js-footer__bttop" aria-label="Back to top"> 
+           <svg>
+               <title>Back to top</title>
+               <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#toparrow" />
+           </svg>
+       </button>   
+</footer>
+</div>
+
+<script>
+   window.publiiThemeMenuConfig = {    
+        mobileMenuMode: 'sidebar',
+        animationSpeed: 300,
+        submenuWidth: 'auto',
+        doubleClickTime: 500,
+        mobileMenuExpandableSubmenus: true, 
+        relatedContainerForOverlayMenuSelector: '.top',
+   };
+</script>
+<script defer src="https://gerco.dev/assets/js/scripts.min.js?v=48e9576b9741cf2a93ab25c5689c9f5d"></script>
+    <script>        
+        var images = document.querySelectorAll('img[loading]');
+
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }
+    </script>
+
+
+</body>
+</html>

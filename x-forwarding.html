@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>X Forwarding - gerco.dev </title>
+        <meta name="description" content="I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least&hellip;" />
+         
+        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <link rel="canonical" href="https://gerco.dev/x-forwarding.html">
+        
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+
+        
+        <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
+        <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/x-forwarding.html"},"headline":"X Forwarding","datePublished":"2017-06-10T19:11","dateModified":"2022-02-22T19:11","description":"I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least&hellip;","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        
+        
+    </head>
+    <body>
+        <div class="site-container">
+   <header class="top" id="js-header">
+      <a class="logo" href="https://gerco.dev/">
+            gerco.dev
+      </a>
+   </header>
+<main>
+      <article class="post">
+         <div class="hero">
+             
+             
+            <header class="hero__content">
+               <div class="wrapper">
+                     <div class="post__meta">
+                        <time datetime="2017-06-10T19:11">
+                              June 10, 2017
+                        </time>
+                     </div>
+                  <h1>
+                     X Forwarding
+                  </h1>
+               </div>
+            </header>
+         </div>
+
+         <div class="wrapper post__entry">           
+            <p>I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least 7GB free to even start up). The way I set this up, though quite straightforward, may be useful to other developers with similar memory requirements. </p>
+<p>I needed 12Gb of VM RAM for this project because I also had to run a a different VM (call that S) with 4GB minimum RAM. Since my laptop has 16GB and the host OS also needs a heap of RAM, I didn’t have room for a desktop environment in the Linux VM for R.</p>
+<h3 id="ingredients">Ingredients</h3>
+<ul>
+<li>   VirtualBox (or something similar)</li>
+<li>   SSH with X forwarding</li>
+<li>   Eclipse (or whatever IDE you like)</li>
+<li>   X Server on host operating system (XQuartz on Mac OS X)</li>
+</ul>
+<h3 id="setup">Setup</h3>
+<ol>
+<li>   Create a Virtual Machine with 8GB of RAM and install CentOS 7 with GNOME desktop</li>
+<li>   Install development tools:  yum groupinstall “Development tools”</li>
+<li>   Install eclipse for C++ from <a href="https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/keplersr2">https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/keplersr2</a></li>
+<li>   Disable the GUI at startup to free up memory for R: <code>systemctl set-default multi-user.target</code></li>
+</ol>
+<h3 id="usage">Usage</h3>
+<p>To use this setup for development just start your VM headless, SSH into it and run:</p>
+<p><code>$ ~/eclipse/cpp-neon/eclipse/eclipse &amp;</code></p>
+<p>And eclipse will start up on your host desktop. It will run as if it was running on your host machine. Because you’re not running a full desktop environment on the VM, there will be enough memory for R, S and your host operating system to run.</p>
+            
+         </div>
+
+            <footer class="wrapper post__footer">
+
+
+
+                  <div class="post__share">
+                        <a
+                           href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgerco.dev%2Fx-forwarding.html"
+                           class="js-share facebook"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#facebook"/>
+                           </svg>
+                           <span>Facebook</span>
+                        </a>
+                     
+                        <a
+                           href="https://twitter.com/share?url=https%3A%2F%2Fgerco.dev%2Fx-forwarding.html&amp;via=gdries&amp;text=X%20Forwarding"
+                           class="js-share twitter"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#twitter"/>
+                           </svg>
+                           <span>Twitter</span>
+                        </a>
+                     
+                     
+                     
+                        <a
+                           href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgerco.dev%2Fx-forwarding.html"
+                           class="js-share linkedin"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#linkedin"/>
+                           </svg>
+                           <span>LinkedIn</span>
+                        </a>
+                     
+                     
+                  </div>
+
+            </footer>
+      </article>
+
+            <nav class="post__nav">
+               <div class="post__nav-inner">
+                     <div class="post__nav-prev">
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-prev"/>
+                        </svg>
+
+                        <a href="https://gerco.dev/openwrt-download-rate-limiting.html" class="invert post__nav-link" rel="prev">
+                           <span>Previous</span>
+                           OpenWRT Download Rate Limiting
+                        </a>
+                     </div>
+                     <div class="post__nav-next">
+                        <a href="https://gerco.dev/what-every-developer-must-know-about-tls.html" class="invert post__nav-link" rel="next">
+                           <span>Next</span>
+                           What every developer must know about TLS
+                        </a>
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-next"/>
+                        </svg>
+                     </div>
+               </div>
+            </nav>
+
+
+
+
+</main>
+<footer class="footer">
+        <div class="footer__copyright">
+            <p>Powered by Publii</p>
+        </div>
+       <button class="footer__bttop js-footer__bttop" aria-label="Back to top"> 
+           <svg>
+               <title>Back to top</title>
+               <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#toparrow" />
+           </svg>
+       </button>   
+</footer>
+</div>
+
+<script>
+   window.publiiThemeMenuConfig = {    
+        mobileMenuMode: 'sidebar',
+        animationSpeed: 300,
+        submenuWidth: 'auto',
+        doubleClickTime: 500,
+        mobileMenuExpandableSubmenus: true, 
+        relatedContainerForOverlayMenuSelector: '.top',
+   };
+</script>
+<script defer src="https://gerco.dev/assets/js/scripts.min.js?v=48e9576b9741cf2a93ab25c5689c9f5d"></script>
+    <script>        
+        var images = document.querySelectorAll('img[loading]');
+
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }
+    </script>
+
+
+</body>
+</html>

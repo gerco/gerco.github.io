@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>OpenWRT Download Rate Limiting - gerco.dev </title>
+        <meta name="description" content="As a parent to an 11 year old girl with an iPhone (no mobile data contract), I have a problem. The problem is that, when given the chance, she will sit and watch Youtube all day - every day. There are a few ways to&hellip;" />
+         
+        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <link rel="canonical" href="https://gerco.dev/openwrt-download-rate-limiting.html">
+        
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+
+        
+        <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
+        <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/openwrt-download-rate-limiting.html"},"headline":"OpenWRT Download Rate Limiting","datePublished":"2017-04-09T19:10","dateModified":"2022-02-22T19:12","description":"As a parent to an 11 year old girl with an iPhone (no mobile data contract), I have a problem. The problem is that, when given the chance, she will sit and watch Youtube all day - every day. There are a few ways to&hellip;","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        
+        
+    </head>
+    <body>
+        <div class="site-container">
+   <header class="top" id="js-header">
+      <a class="logo" href="https://gerco.dev/">
+            gerco.dev
+      </a>
+   </header>
+<main>
+      <article class="post">
+         <div class="hero">
+             
+             
+            <header class="hero__content">
+               <div class="wrapper">
+                     <div class="post__meta">
+                        <time datetime="2017-04-09T19:10">
+                              April 9, 2017
+                        </time>
+                     </div>
+                  <h1>
+                     OpenWRT Download Rate Limiting
+                  </h1>
+               </div>
+            </header>
+         </div>
+
+         <div class="wrapper post__entry">           
+            <p>As a parent to an 11 year old girl with an iPhone (no mobile data contract), I have a problem. The problem is that, when given the chance, she will sit and watch Youtube all day - every day. There are a few ways to solve that problem:</p>
+<ol>
+<li>Take the phone away</li>
+<li>Closely monitor the phone use and take it away after x minutes/hours</li>
+<li>Geek out</li>
+</ol>
+<p>Being a geek, the only real option is of course the third one. Besides, option number 1 would result in a lot of drama and option number 2 is way too much work. My wife and I have better things to do than constantly monitor whether her x minutes/hours are already up and an 11 year old doesn’t want nor should be under constant surveillance.</p>
+<p>There are a few requirements to the solution that would work for us:</p>
+<ol>
+<li>Watching videos needs to be possible but limited. We have no problem with watching videos but all day every day is not OK.</li>
+<li>There should not be any need for manual action. If we have to take any manual actions there will be times that we forget and enforcement will be inconsistent, making it useless.</li>
+<li>Messages through WhatsApp, iMessage, Instagram, etc should not be blocked. We live in suburbian USA and there is very limited mobility for teens here (no sidewalks, no bike roads so they have to be driven everywhere). Messages and such are a very important tool to stay in touch with friends socially.</li>
+</ol>
+<p>Rate limiting seems to fit all these options. Her iPhone gets some quota (say 500MB) per day and after that the connection slows down to 16kB/s. This will not allow videos but message and email will work fine.</p>
+<p>I looked around for ways of doing this with my OpenWRT router (<a href="https://omnia.turris.cz/en/">Turris Omnia</a>) and ran into a few issues: Most of the rate limiting examples limit only upstream bandwidth and I want to mostly limit downstream instead. Some of the solutions used magic incantations for the SQM system (traffic shaping) that I found more complex than worth getting in to. I found the CONNMARK iptables target and it seems to fit the bill exactly:</p>
+<p>First MARK all packets from my daughter’s device:</p>
+<pre><code>iptables -t nat -A prerouting_rule -m mac --mac-source 1c:91:48:xx:xx:xx -j MARK --set-mark 0x0A -m comment --comment &quot;iPhone SE&quot;
+</code></pre>
+<p>If you want to include more devices in this rule, just add more MARK rules, you can add as many mac addresses as you like. When all desired packets are marked, we need to transfer this mark to the connection that they are a part of:</p>
+<pre><code># If a packet is marked, make sure the connection is marked as well
+iptables -t nat -A prerouting_rule -m mark --mark 0xA -j CONNMARK --save-mark
+
+# On incoming packets, make sure to read the connection mark back into the packet
+iptables -t mangle -A PREROUTING -j CONNMARK --restore-mark
+</code></pre>
+<p>Because connection tracking is required for NAT anyway, this doesn’t cause a lot of extra load on the router. All open connections from one of the marked devices will now be marked with the value 0xA, which we will use later to limit the download speed.</p>
+<p>To do the actual rate limiting I used the hashlimit module. It can be found in opkg so it’s easily installed on OpenWRT.</p>
+<pre><code>iptables  -A forwarding_rule -m mark --mark 0xA -m conntrack --ctstate ESTABLISHED,RELATED -m hashlimit --hashlimit-name &quot;Over quota&quot; --hashlimit-above 16kb/s -j DROP
+</code></pre>
+<p><em>Please note: The above rules are all OpenWRT specific since the chain names used in them are created by the OpenWRT firewall scripts. Substitute appropriate chains if using this method on some other Linux distribution.</em></p>
+<p>Now that we have a rate limit in place, we need to be able to turn it on and off based on the amount of bandwidth consumed. There are ways of doing this with pure iptables but since those counters are not very reliable (they get wiped at every firewall reload), I decided to use <a href="https://project.turris.cz/en/software">Majordomo</a> which was already included in my Turris Omnia router by default. It writes bandwidth statistics to /tmp in CSV format that we can easily use.</p>
+<p>I very poorly cobbled together a <a href="https://gist.github.com/gerco/e0d6d4876eb4d77e3dabfb3e6a3faf21">Python script</a> to check whether the quota has been exceeded and call it from cron every minute. This creates a marker file that I check for in /etc/firewall.user and creates the above iptables rules when the quota has been exceeded.</p>
+<p>For now, this works well. I’m sure many improvements can be made and I’d like to get rid of the Python script and the cron job. I’m sure there are ways of limiting download speed using only iptables that I haven’t found yet but it was a fun evening.</p>
+<p><em>As a last note: If you have IPv6 connectivity at home, make sure to duplicate all these rules in ip6tables as well. Youtube works fine over IPv6</em></p>
+            
+         </div>
+
+            <footer class="wrapper post__footer">
+
+
+
+                  <div class="post__share">
+                        <a
+                           href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgerco.dev%2Fopenwrt-download-rate-limiting.html"
+                           class="js-share facebook"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#facebook"/>
+                           </svg>
+                           <span>Facebook</span>
+                        </a>
+                     
+                        <a
+                           href="https://twitter.com/share?url=https%3A%2F%2Fgerco.dev%2Fopenwrt-download-rate-limiting.html&amp;via=gdries&amp;text=OpenWRT%20Download%20Rate%20Limiting"
+                           class="js-share twitter"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#twitter"/>
+                           </svg>
+                           <span>Twitter</span>
+                        </a>
+                     
+                     
+                     
+                        <a
+                           href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgerco.dev%2Fopenwrt-download-rate-limiting.html"
+                           class="js-share linkedin"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#linkedin"/>
+                           </svg>
+                           <span>LinkedIn</span>
+                        </a>
+                     
+                     
+                  </div>
+
+            </footer>
+      </article>
+
+            <nav class="post__nav">
+               <div class="post__nav-inner">
+                     <div class="post__nav-prev">
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-prev"/>
+                        </svg>
+
+                        <a href="https://gerco.dev/netatalk-318-on-ubuntu-1510-via-ppa.html" class="invert post__nav-link" rel="prev">
+                           <span>Previous</span>
+                           Netatalk 3.1.8 on Ubuntu 15.10 via PPA
+                        </a>
+                     </div>
+                     <div class="post__nav-next">
+                        <a href="https://gerco.dev/x-forwarding.html" class="invert post__nav-link" rel="next">
+                           <span>Next</span>
+                           X Forwarding
+                        </a>
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-next"/>
+                        </svg>
+                     </div>
+               </div>
+            </nav>
+
+
+
+
+</main>
+<footer class="footer">
+        <div class="footer__copyright">
+            <p>Powered by Publii</p>
+        </div>
+       <button class="footer__bttop js-footer__bttop" aria-label="Back to top"> 
+           <svg>
+               <title>Back to top</title>
+               <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#toparrow" />
+           </svg>
+       </button>   
+</footer>
+</div>
+
+<script>
+   window.publiiThemeMenuConfig = {    
+        mobileMenuMode: 'sidebar',
+        animationSpeed: 300,
+        submenuWidth: 'auto',
+        doubleClickTime: 500,
+        mobileMenuExpandableSubmenus: true, 
+        relatedContainerForOverlayMenuSelector: '.top',
+   };
+</script>
+<script defer src="https://gerco.dev/assets/js/scripts.min.js?v=48e9576b9741cf2a93ab25c5689c9f5d"></script>
+    <script>        
+        var images = document.querySelectorAll('img[loading]');
+
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }
+    </script>
+
+
+</body>
+</html>

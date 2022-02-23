@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Netatalk 3.1.8 on Ubuntu 15.10 via PPA - gerco.dev </title>
+        <meta name="description" content="(This post serves mostly as personal documentation and as a place to host relevant links) Netatalk is a daemon that runs an Apple File Protocol (AFP) service on a Linux or other *nix machine that will allow Macs to use it as a file server&hellip;" />
+         
+        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <link rel="canonical" href="https://gerco.dev/netatalk-318-on-ubuntu-1510-via-ppa.html">
+        
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+
+        
+        <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
+        <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/netatalk-318-on-ubuntu-1510-via-ppa.html"},"headline":"Netatalk 3.1.8 on Ubuntu 15.10 via PPA","datePublished":"2016-02-04T19:09","dateModified":"2022-02-22T19:09","description":"(This post serves mostly as personal documentation and as a place to host relevant links) Netatalk is a daemon that runs an Apple File Protocol (AFP) service on a Linux or other *nix machine that will allow Macs to use it as a file server&hellip;","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        
+        
+    </head>
+    <body>
+        <div class="site-container">
+   <header class="top" id="js-header">
+      <a class="logo" href="https://gerco.dev/">
+            gerco.dev
+      </a>
+   </header>
+<main>
+      <article class="post">
+         <div class="hero">
+             
+             
+            <header class="hero__content">
+               <div class="wrapper">
+                     <div class="post__meta">
+                        <time datetime="2016-02-04T19:09">
+                              February 4, 2016
+                        </time>
+                     </div>
+                  <h1>
+                     Netatalk 3.1.8 on Ubuntu 15.10 via PPA
+                  </h1>
+               </div>
+            </header>
+         </div>
+
+         <div class="wrapper post__entry">           
+            <p>(This post serves mostly as personal documentation and as a place to host relevant links)</p>
+<p>Netatalk is a daemon that runs an Apple File Protocol (AFP) service on a Linux or other *nix machine that will allow Macs to use it as a file server and Time Machine backup target. This is great if you have a few Macs in your house and don’t want to buy a big enough Time Capsule to back them all up. With Netatalk you can back them up to your Linux file server. </p>
+<p>Ubuntu only provides Netatalk version 2.x in their repos and that version has some issues with Time Machine reliability. Because of that I was looking to install the latest version of Netatalk on my Ubuntu 15.10 server (to, hopefully, see the dreaded “Time Machine must create a new backup for you”-message a little less often). To my great surprise there were some PPAs for older Ubuntu versions but none for 15.10 that I could find.</p>
+<p>I found some instructions to <a href="http://netatalk.sourceforge.net/wiki/index.php/Install_Netatalk_3.1.8_on_Ubuntu_15.10_Wily">install from source</a>, but I didn’t want to do that. Installing from source requires installing a boatload of build dependencies that I don’t want on my “production” server. Besides, on a system that is based on a package manager, installing from source should be avoided if at all possible. It’s asking for trouble down the line.</p>
+<p>I decided to try and create my own PPA for this Netatalk/Ubuntu combination and to limit the cruft I had to install on my server tried to create a Docker-based environment for building the package based on an <a href="https://launchpad.net/~igoritl/+archive/ubuntu/netatalk">existing PPA for an older version</a> existing PPA for an older version. Fast forward 2 days of digging into the depths of the Ubuntu/Debian build system, how PPAs work and a few hundred builds failed for whatever reasons and here is the result.</p>
+<ul>
+<li>PPA: <a href="https://launchpad.net/~gercod/+archive/ubuntu/netatalk">https://launchpad.net/~gercod/+archive/ubuntu/netatalk</a></li>
+<li>Source: <a href="https://github.com/gerco/netatalk-ppa">https://github.com/gerco/netatalk-ppa</a></li>
+</ul>
+<p>To install:</p>
+<pre><code>$ sudo apt-add-repository ppa:gercod/netatalk
+$ sudo apt-get update
+$ sudo apt-get install netatalk
+</code></pre>
+<p>See <a href="http://netatalk.sourceforge.net/wiki/index.php/Install_Netatalk_3.1.8_on_Ubuntu_15.10_Wily">http://netatalk.sourceforge.net/wiki/index.php/Install_Netatalk_3.1.8_on_Ubuntu_15.10_Wily</a> for initial configuration advice. Make sure to enable the service at boot:</p>
+<pre><code>$ sudo systemctl enable netatalk
+</code></pre>
+            
+         </div>
+
+            <footer class="wrapper post__footer">
+
+
+
+                  <div class="post__share">
+                        <a
+                           href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgerco.dev%2Fnetatalk-318-on-ubuntu-1510-via-ppa.html"
+                           class="js-share facebook"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#facebook"/>
+                           </svg>
+                           <span>Facebook</span>
+                        </a>
+                     
+                        <a
+                           href="https://twitter.com/share?url=https%3A%2F%2Fgerco.dev%2Fnetatalk-318-on-ubuntu-1510-via-ppa.html&amp;via=gdries&amp;text=Netatalk%203.1.8%20on%20Ubuntu%2015.10%20via%20PPA"
+                           class="js-share twitter"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#twitter"/>
+                           </svg>
+                           <span>Twitter</span>
+                        </a>
+                     
+                     
+                     
+                        <a
+                           href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgerco.dev%2Fnetatalk-318-on-ubuntu-1510-via-ppa.html"
+                           class="js-share linkedin"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#linkedin"/>
+                           </svg>
+                           <span>LinkedIn</span>
+                        </a>
+                     
+                     
+                  </div>
+
+            </footer>
+      </article>
+
+            <nav class="post__nav">
+               <div class="post__nav-inner">
+                     <div class="post__nav-prev">
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-prev"/>
+                        </svg>
+
+                        <a href="https://gerco.dev/anonymous-user-counting-through-dns.html" class="invert post__nav-link" rel="prev">
+                           <span>Previous</span>
+                           Anonymous user counting through DNS
+                        </a>
+                     </div>
+                     <div class="post__nav-next">
+                        <a href="https://gerco.dev/openwrt-download-rate-limiting.html" class="invert post__nav-link" rel="next">
+                           <span>Next</span>
+                           OpenWRT Download Rate Limiting
+                        </a>
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-next"/>
+                        </svg>
+                     </div>
+               </div>
+            </nav>
+
+
+
+
+</main>
+<footer class="footer">
+        <div class="footer__copyright">
+            <p>Powered by Publii</p>
+        </div>
+       <button class="footer__bttop js-footer__bttop" aria-label="Back to top"> 
+           <svg>
+               <title>Back to top</title>
+               <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#toparrow" />
+           </svg>
+       </button>   
+</footer>
+</div>
+
+<script>
+   window.publiiThemeMenuConfig = {    
+        mobileMenuMode: 'sidebar',
+        animationSpeed: 300,
+        submenuWidth: 'auto',
+        doubleClickTime: 500,
+        mobileMenuExpandableSubmenus: true, 
+        relatedContainerForOverlayMenuSelector: '.top',
+   };
+</script>
+<script defer src="https://gerco.dev/assets/js/scripts.min.js?v=48e9576b9741cf2a93ab25c5689c9f5d"></script>
+    <script>        
+        var images = document.querySelectorAll('img[loading]');
+
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }
+    </script>
+
+
+</body>
+</html>

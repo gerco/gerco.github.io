@@ -1,0 +1,636 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title>gerco.dev</title>
+    <link href="https://gerco.dev/feed.xml" rel="self" />
+    <link href="https://gerco.dev" />
+    <updated>2022-02-22T19:20:48-05:00</updated>
+    <author>
+        <name>Gerco Dries</name>
+    </author>
+    <id>https://gerco.dev</id>
+
+    <entry>
+        <title>T-Mobile US and OpenVPN</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/t-mobile-us-and-openvpn.html"/>
+        <id>https://gerco.dev/t-mobile-us-and-openvpn.html</id>
+
+        <updated>2022-02-22T19:20:48-05:00</updated>
+            <summary>
+                <![CDATA[
+                    Recently, I switched my familie’s mobile phone plan to T-Mobile and this has caused some issues with the VPN connection to my home from my phone. At times, the VPN would not come up at all and other times the VPN would connect just fine,&hellip;
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>Recently, I switched my familie’s mobile phone plan to T-Mobile and this has caused some issues with the VPN connection to my home from my phone. At times, the VPN would not come up at all and other times the VPN would connect just fine, but no data would flow. Even stranger were the times that the VPN connection came up and appeared to work fine until I downloaded a file or attempted to play some media from my <a href="https://emby.media">Emby</a> server.</p>
+<p>After much testing and googling around, I finally found that the issue had to do with the MTU (essentially: maximum packet size) via T-Mobile. I’m not quite sure of the specific details, but as far as I’ve been able to determine the problem is that T-Mobile uses a 4-over-6 tunneling system to tunnel IPv4 traffic over their IPv6-only mobile network. Whether that is true or not can only be determined by T-Mobile. They are not very helpful on their forums, referring to the fact that VPN is unsupported and they cannot give any technical details or assistance. Packets that are larger than some threshold appear to get blocked or lost in the T-Mobile network and cause the VPN connection to stall, breaking file transfers and media playback.</p>
+<p>Lowering the maximum packet size via <a href="https://openvpn.net/community-resources/reference-manual-for-openvpn-2-4/">OpenVPN configuration</a> turned out to be the solution to my problem. Simply add the following parameter to your client’s .ovpn file to lower the MTU for the connection:</p>
+<p><code>mssfix 1400</code></p>
+<p>The default value is 1450, which resulted in packets that were too large. Setting this to 1400 solved my problem. You may need a lower value or be able to use a higher one depending on various factors, your mileage may vary and some experimentation may be required to determine the correct value for your situation.</p>
+
+            ]]>
+        </content>
+    </entry>
+    <entry>
+        <title>NGINX reverse proxy with TLS passthrough</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/nginx-reverse-proxy-with-tls-passthrough.html"/>
+        <id>https://gerco.dev/nginx-reverse-proxy-with-tls-passthrough.html</id>
+
+        <updated>2022-02-22T19:20:11-05:00</updated>
+            <summary>
+                <![CDATA[
+                    Like many other developers and tinkerers, I run a few services on my home server that I would like to access from the public internet when I’m not home. A good way to host many services on a single IPv4 address is to employ a&hellip;
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>Like many other developers and tinkerers, I run a few services on my home server that I would like to access from the public internet when I’m not home. A good way to host many services on a single IPv4 address is to employ a reverse proxy, I use <a href="https://www.nginx.com">NGINX</a> for that purpose. A combination of NGINX and a few shell scripts results in a system with automatically updating TLS certificates using <a href="https://letsencrypt.org">Let’s Encrypt</a>, hosting services under many virtual (sub)domains and URLs. For example <a href="https://cloud.myname.com">https://cloud.myname.com</a>, <a href="https://home.myname.com/someservice">https://home.myname.com/someservice</a>, etc.</p>
+<p>In the last few years, more and more services now natively support Let’s Encrypt and that makes it very easy to protect them with a TLS certificate. To use the built-in Let’s Encrypt support for those services it’s often necessary for them to be the only service on port 443. They manage their own keys and certificates so it’s difficult to host more than one service on any IPv4 address.</p>
+<p>NGINX has a convenient feature that allows proxied services to directly manage their own certificates without needing the proxy server to be aware of the encryption keys: <a href="http://nginx.org/en/docs/stream/ngx_stream_core_module.html">streams</a>. The feature can even be combined with the regular https proxy for maximum flexibility:</p>
+<p>The relevant configuration is as follows:</p>
+<pre><code>stream {
+        map $ssl_preread_server_name $name {
+                pbx.mydomain.com  pbx;
+                default           yxorp;
+        }
+
+        upstream pbx {
+                server 10.1.2.3:443;
+        }
+
+        upstream yxorp {
+                server 127.0.0.1:1443;
+        }
+
+        server {
+                listen 443;
+                listen [::]:443;
+                proxy_pass $name;
+                ssl_preread on;
+        }
+}
+</code></pre>
+<p>This is a hypothetical configuration for a <a href="https://www.freepbx.org">FreePBX</a> server that’s managing its own certificate and a <a href="https://nextcloud.com">Nextcloud</a> instance where the certificate is managed by the reverse proxy server. The DNS A records for pbx.mydomain.com and cloud.mydomain.com are both pointing to the same IPv4 address.</p>
+<p>The <code>stream</code> section reads the server name the TLS client wants to connect to and then decides to which <code>upstream</code> the connection will be forwarded. If the client wants to connect to “pbx.mydomain.com”, the connection is proxied directly to the FreePBX server at 10.1.2.3. This allows the FreePBX server to terminate the TLS connection and be in complete control of its certificates and encryption keys.</p>
+<pre><code>server {
+        listen 1443 ssl http2;
+
+        server_name cloud.mydomain.com;
+
+        ssl on;
+        ssl_certificate /etc/ssl/acme/cloud.mydomain.com/fullchain.pem;
+        ssl_certificate_key /etc/ssl/acme/private/cloud.mydomain.com/privkey.pem;
+        
+        location / {
+                proxy_pass http://10.2.3.4/;
+        }
+}
+</code></pre>
+<p>If the client wants to connect to a different domain name, the connection is proxied to localhost:1443 where the second configuration comes in. All the <code>server</code> sections that would normally be defined to listen on port 443 are listening to port 1443 instead. Since the <code>stream</code> server forwards all unknown domain names to this port, all domains configured as virtual hosts will work as normal.</p>
+<pre><code>server {
+    listen        80;
+    server_name    pbx.mydomain.com;
+
+    location .well-known {
+        proxy_pass http://10.1.2.3:80/.well-known;
+    }
+}
+</code></pre>
+<p>Lastly, the Let’s Encrypt service needs to be able to access the <code>.well-known</code> directory on the FreePBX server for verification purposes. The FreePBX server will create a local file that Let’s Encrypt will need to access. To make that possible, we define an extra <code>server</code> segment on port 80 for that hostname to ensure that the automatic domain validation can succeed.</p>
+<p>This approach does have a serious downside: The applications behind the reverse proxy will lose the ability to determine the real IP address of their clients. All connections to the proxied services will be made by the reverse proxy so they will only see the proxy’s address. This can normally be worked around by using the <code>X-Forwarded-For</code> header, but due to the use of the <code>stream</code> server as the point of entry, this is no longer possible.</p>
+
+            ]]>
+        </content>
+    </entry>
+    <entry>
+        <title>Server Name Indication</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/server-name-indication.html"/>
+        <id>https://gerco.dev/server-name-indication.html</id>
+
+        <updated>2022-02-22T19:19:23-05:00</updated>
+            <summary>
+                <![CDATA[
+                    Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In&hellip;
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In 2003, an extension was added to the protocol (Server Name Indication, SNI) to resolve this issue and allow a server to serve the correct certificate for the host name a client is expecting (<a href="https://www.ietf.org/rfc/rfc3546.txt">RFC 3546</a>).</p>
+<p>There is still some old software around that does not support SNI so servers still may have to deal with clients that do and do not support SNI. They do this by configuring one certificate for each domain name for clients that support SNI and a single certificate with an alternative name for each of the configured domains for clients that don’t. For example: If a server is responsible for three domain names:</p>
+<ul>
+<li>domain1.com</li>
+<li>domain2.com</li>
+<li>domain3.com</li>
+</ul>
+<p>There would be four certificates configured on that server. One for each of the above domain names and another one that contains all three of the domains as alternative names (SANs).</p>
+<p>Issues with SNI will often appear as cases where some clients will be able to connect and some will not be able to without any clear indications as to why. When checking the certificate with a browser, the correct certificate will appear to be served because the browser supports SNI. In order to check which certificate is served with- and without SNI, use the following commands:</p>
+<table>
+<thead>
+<tr>
+<th align="left">Scenario</th>
+<th align="left">Command</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><em>without</em> SNI</td>
+<td align="left"><code>openssl s_client -connect domain1.com:443</code></td>
+</tr>
+<tr>
+<td align="left"><em>with</em> SNI</td>
+<td align="left"><code>openssl s_client -connect domain1.com:443 -servername domain1.com</code></td>
+</tr>
+</tbody></table>
+<p>OpenSSL will print out the server’s certificate in base64 encoding. Copy that to a file and use <code>openssl x509 -in domain1.crt -text</code> to convert it to a more readable format in order to check the certificate contents.</p>
+
+            ]]>
+        </content>
+    </entry>
+    <entry>
+        <title>What every developer must know about TLS</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/what-every-developer-must-know-about-tls.html"/>
+        <id>https://gerco.dev/what-every-developer-must-know-about-tls.html</id>
+
+        <updated>2022-02-22T19:17:41-05:00</updated>
+            <summary>
+                <![CDATA[
+                    Transport Layer Security (TLS) or, as many still call it: SSL, is a cornerstone technology of the internet. It enables internet banking, many b2b applications and secure communications with your doctor. With the advent of free certificates from Let’s Encrypt, there are no more excuses&hellip;
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>Transport Layer Security (TLS) or, as many still call it: SSL, is a cornerstone technology of the internet. It enables internet banking, many b2b applications and secure communications with your doctor. With the advent of free certificates from <a href="https://letsencrypt.org">Let’s Encrypt</a>, there are no more excuses for websites not to support it.</p>
+<p>As a result of the increasing adoption of HTTPS, the secure version of HTTP (or HTTP over TLS). Many developers are forced to learn how to configure their web servers for TLS.  Many of them don’t quite understand how it all works and stumble through tutorials, settings, certificate files and checkboxes hoping to get it to work. When it finally does, they leave it all alone until it inevitably breaks and the process of trial and error begins anew.</p>
+<p>To prevent too many people from making the same mistakes over and over again, I decided to write this article. Much of this is old news to many people but it’s my hope that there is a nugget of missed understanding here and there that will be useful. This article is a high-level overview and in no way attempts to convey technical details about the underlying protocols.</p>
+<h2 id="tls-101">TLS 101</h2>
+<p>TLS is a communications protocol with two goals: authentication and privacy. The goal is to know who you’re talking to and to make sure nobody else can listen in on the conversation. To understand how TLS achieves these goals, we first have to go over some basics.</p>
+<h3 id="privacy">Privacy</h3>
+<p>When two parties want to exchange information without anyone finding out what that information is, that information can be encoded in a way that can be decyphered by the communicating parties but not by anyone else. An uncountable number of schemes have been devised for achieving this, ranging from the simple Ceasar Cipher to full blown quantum cryptography. Most of these schemes are not (yet) relevant to TLS, however, so we’ll limit ourselves to the RSA system.</p>
+<p>In the RSA cryptography system, the two parties (traditionally called Alice and Bob) that want to communicate first both create something called a <strong>key pair</strong>, this key pair consists of a <strong>public key</strong> and a <strong>private key</strong> (both are essentially very large numbers). The specifics are not important here, but suffice it to say that when Alice encrypts a message with Bob’s <strong>public key</strong>, it can only be decrypted by Bob’s <strong>private key</strong>. Conversely when Bob wants to send a message to Alice, he needs to encrypt it with her <strong>public key</strong> so Alice can later decrypt it with her <strong>private key</strong>.</p>
+<p>Aside from encrypting messages, RSA can also be used to <em>sign</em> messages. A message signature proves who wrote the signed message and that the messages has not been altered after having been signed. In order to sign a message, Alice will compute a <a href="https://en.wikipedia.org/wiki/Cryptographic_hash_function">hash</a> of the message and encrypt that hash with her <strong>private key</strong>. Anyone that has Alice’s <strong>public key</strong> can then verify the signature and know the message was signed by Alice and has not been modified.</p>
+<p>To learn more about RSA and other asymmetric crypto systems, see <a href="https://en.wikipedia.org/wiki/Public-key_cryptography">Public-key cryptography</a> on Wikipedia.</p>
+<h3 id="authentication">Authentication</h3>
+<p>Privacy by itself is not enough for secure communications. An eavesdropper may not be able to listen in on the connection after it’s been established, but it’s still perfectly possible for a <a href="https://en.wikipedia.org/wiki/Man-in-the-middle_attack">Man in the Middle</a> (MITM) to intercept the connection and establish key pairs with both sides of the connection. The MITM is then able to decrypt all traffic from Alice and re-encrypt it before sending it off to Bob. Alice and Bob are none the wiser without the second important property of TLS: authentication.</p>
+<p>In TLS, authentication is achieved by using certificates (see <a href="https://en.wikipedia.org/wiki/Certificate_authority">X.509</a>). A certificate is simply a <strong>public key</strong> bundled with some information about its owner that is signed by a trusted third party (a <a href="https://en.wikipedia.org/wiki/Certificate_authority">certificate authority</a>). Think of it like a passport, a passport can be used to prove someone’s identity because it was issued by a trusted third party (that person’s government).</p>
+<h2 id="basics-of-a-tls-connection">Basics of a TLS connection</h2>
+<p>A TLS connection begins when a client (i.e. a web browser) sends a <a href="https://tools.ietf.org/html/rfc5246#section-7.4.1.2"><code>Client Hello</code></a> message to a server (a web server). This message contains some basic information about the connection the client wants to establish: the protocol versions supported, a list of supported encryption protocols, hashing algorithms, etc. It contains everything the server could possibly want to know about what the client supports so it’s free to choose the most secure combination of algorithms both client and server support.</p>
+<p>After receiving the <code>Client Hello</code>, the server will reply with its own <a href="https://tools.ietf.org/html/rfc5246#section-7.4.1.3"><code>Server Hello</code></a> message that informs the client of the chosen encryption- and hashing algorithms, various parameters and the all important <strong>Server Certificate</strong>.</p>
+<p>The server certificate contains the server’s public key and information about the server that owns that key (such as the company that owns it, etc). Most importantly, it contains the server’s name (called the “Common Name” or CN). Any TLS client <em>must</em> compare the name in the certificate with the name they were trying to connect to and reject the connection if they don’t match to prevent man in the middle attacks.</p>
+<p>After the <code>Server Hello</code> and associated messages, the client must now decide whether to trust the certificate the server has offered or abort the connection, more about that later. The client can also send a certificate of its own in a <a href="https://tools.ietf.org/html/rfc5246#section-7.4.6"><code>Client Certificate</code></a> message. This is used for <a href="https://en.wikipedia.org/wiki/Mutual_authentication">Mutual authentication</a>, which is more rare and outside the scope of this article.</p>
+<h2 id="chain-of-trust">Chain of trust</h2>
+<p>How does a TLS client know whether to trust the certificate a server has offered? As you will remember, the certificate contains a public key and some information about the owner of that key, such as its name. In the case of a web server this name will be the domain name of the server, something like “somecompany.com”. The certificate can also contain some alternative names, such as “<a href="http://www.somecompany.com&quot;">www.somecompany.com&quot;</a> so the certificate can be used for multiple domain names.</p>
+<p>A certificate also contains validity dates, an <strong>issuer name</strong> and a <strong>signature</strong> from that issuer. The certificate for “somecompany.com” therefore looks something like this:</p>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th align="center">Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Name(s)</td>
+<td align="center">somecompany.com, <a href="http://www.somecompany.com">www.somecompany.com</a></td>
+</tr>
+<tr>
+<td>Valid from</td>
+<td align="center">December 1, 2017</td>
+</tr>
+<tr>
+<td>Valid until</td>
+<td align="center">December 1, 2020</td>
+</tr>
+<tr>
+<td>Public key</td>
+<td align="center"><em>a very large number</em></td>
+</tr>
+<tr>
+<td>Issuer</td>
+<td align="center">TrustUs Inc. Certificate Authority</td>
+</tr>
+<tr>
+<td>Signature</td>
+<td align="center"><em>— signed by TrustUs Inc. —</em></td>
+</tr>
+</tbody></table>
+<p>In order for a client to trust a certificate it must be valid at the time of connection; it must belong to the server the client is trying to connect to and; it must have been signed by a certificate authority the client trusts. Every TLS client is configured with a <strong>trust store</strong>, a list of certificate authorities that it trusts. Only certificates signed by a trusted authority will be accepted.</p>
+<p>For web browsers, the trust store can be built in to the operating system (Internet Explorer, Google Chrome or Safari) or the browser vendor can provide its own (Firefox). Typically, there exists some management interface to add and remove certificates manually (Keychain Access on the Mac, the Certificate Manager SMC snap-in) on Windows but this store is most often maintained by the operating system or browser vendor. For non-web browser applications, the trust store is often configured separately. However the setup for any particular operating system or application, there is always a trust store containing the trusted certification authorities.</p>
+<p>Let’s examine a real world certificate. For illustration purposes, we’ll use the certificate for github.com:
+<figure class="post__image"><img loading="lazy" src="https://gerco.dev/media/posts/7/github-dot-com-certificate.png" sizes="(max-width: 48em) 100vw, 768px" srcset="https://gerco.dev/media/posts/7/responsive/github-dot-com-certificate-xs.png 300w ,https://gerco.dev/media/posts/7/responsive/github-dot-com-certificate-sm.png 480w ,https://gerco.dev/media/posts/7/responsive/github-dot-com-certificate-md.png 768w ,https://gerco.dev/media/posts/7/responsive/github-dot-com-certificate-lg.png 1024w ,https://gerco.dev/media/posts/7/responsive/github-dot-com-certificate-xl.png 1360w ,https://gerco.dev/media/posts/7/responsive/github-dot-com-certificate-2xl.png 1600w"  alt="github.com certificate" width="550" height="474" /></figure></p>
+<p>This certificate’s chain of trust is a little more complicated than the above description. The certificate for “github.com” was signed by the issuer “DigiCert SHA2 Extended Validation CA”, which in turn is signed by the issuer “DigiCert High Assurance EV Root CA”. In many situations, certificate authorities use “intermediate” certificates. These intermediate certificates often have shorter validity dates than their main certificate and are only used for signing certain types of certificates (in this case only for <a href="https://en.wikipedia.org/wiki/Extended_Validation_Certificate">Extended Validation</a> certificates, a type of certificate with strict validation of the company it represents).</p>
+<p>When connecting to github.com, the server will send us <strong>both</strong> its own certificate and also the above intermediate certificate. It may send more, enough to form a “chain of trust” all the way up to a certificate that is included in the client’s trust store. In order for a client to check the validity of the server’s certificate it has to be able to check the validity of all certificates leading up to a trusted root certificate (the ones in its trust store). </p>
+<p>When connecting to github.com, a web browser will:</p>
+<ol>
+<li>check whether the “<em>github.com</em>“ certificate’s signature is valid;</li>
+<li>move up the chain to the intermediate certificate (in this case “<em>DigiCert SHA2 Extended Validation CA</em>“), and check its validity dates and signature</li>
+<li>lastly, it encounters the certificate “<em>DigiCert High Assurance EV Root CA</em>“. This root certificate is explicitly trusted because it’s included in the browser’s trust store.</li>
+</ol>
+<h2 id="configuring-your-server">Configuring your server</h2>
+<p>In order for a server to use TLS, it needs two things: a certificate and the corresponding private key. How to obtain these depends on your certificate issuer, there are two common approaches:</p>
+<ol>
+<li>The certificate issuer generates a key and certificate. These are offered for download to the server and can be installed directly. This process is convenient, but less secure than the alternative.</li>
+<li>The server administrator generates a key pair themselves and sends the issuer a <em>certificate request</em>. The issuer converts this request into a certificate and offers it for download. This approach is more secure since nobody but the server administrator ever gets to see the private key.</li>
+</ol>
+<p>Once the certificate and private key are both available, they can be entered into the server configuration. In many cases, the certificate issuer will also provide a “certificate chain” file or a separate intermediate certificate for download. The server configuration must contain all certificates required to link the server certificate to a well-known trusted root.</p>
+<p>Depending on your server software, you may have to combine the server certificate and any intermediates into a single file or they can be configured as separate files. For more information on how to configure some often used server software, refer to the following links: </p>
+<p><a href="https://httpd.apache.org/docs/2.4/ssl/ssl_howto.html">Apache 2.4</a> | <a href="http://nginx.org/en/docs/http/configuring_https_servers.html">NGINX</a> | <a href="https://support.microsoft.com/en-us/help/324069/how-to-set-up-an-https-service-in-iis">Microsoft IIS 8</a> | <a href="http://www.postfix.org/TLS_README.html">Postfix</a> | <a href="http://www.qmailtoaster.net/ssl.html">Qmail</a> | <a href="https://docs.microsoft.com/en-us/powershell/module/exchange/encryption-and-certificates/enable-exchangecertificate?view=exchange-ps">Microsoft Exchange</a></p>
+<h2 id="common-issues">Common issues</h2>
+<h3 id="tls-version-conflicts">TLS Version Conflicts</h3>
+<h3 id="mismatched-parameters">Mismatched parameters</h3>
+<h2 id="useful-commands">Useful commands</h2>
+<p><code>openssl x509 -in certificate.crt -text</code></p>
+<p>Print out a certificate in human readable form. Append <code>-noout</code> to suppress the base64 form of the certificate.</p>
+<p><code>openssl verify -CAfile bundle.crt certificate.crt</code></p>
+<p>Verify a certificate chain using a set of certificates in <code>bundle.crt</code> (a file of concatenated, PEM formatted trusted certificates).</p>
+<p><code>openssl s_client -connect domain1.com:443</code></p>
+<p>Connect to a server and print out debug information (including the server’s certificate in base64 format). Append <code>-showcerts</code> to print any additional certificates the server may be sending as well. Use <code>-servername</code> to enable the SNI extension and specify the server name to send.</p>
+<p><code>openssl x509 -in certificate.cer -inform der -out certificate.crt</code></p>
+<p>Convert a certificate from DER format to PEM format.</p>
+
+            ]]>
+        </content>
+    </entry>
+    <entry>
+        <title>X Forwarding</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/x-forwarding.html"/>
+        <id>https://gerco.dev/x-forwarding.html</id>
+
+        <updated>2022-02-22T19:11:57-05:00</updated>
+            <summary>
+                <![CDATA[
+                    I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least&hellip;
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least 7GB free to even start up). The way I set this up, though quite straightforward, may be useful to other developers with similar memory requirements. </p>
+<p>I needed 12Gb of VM RAM for this project because I also had to run a a different VM (call that S) with 4GB minimum RAM. Since my laptop has 16GB and the host OS also needs a heap of RAM, I didn’t have room for a desktop environment in the Linux VM for R.</p>
+<h3 id="ingredients">Ingredients</h3>
+<ul>
+<li>   VirtualBox (or something similar)</li>
+<li>   SSH with X forwarding</li>
+<li>   Eclipse (or whatever IDE you like)</li>
+<li>   X Server on host operating system (XQuartz on Mac OS X)</li>
+</ul>
+<h3 id="setup">Setup</h3>
+<ol>
+<li>   Create a Virtual Machine with 8GB of RAM and install CentOS 7 with GNOME desktop</li>
+<li>   Install development tools:  yum groupinstall “Development tools”</li>
+<li>   Install eclipse for C++ from <a href="https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/keplersr2">https://eclipse.org/downloads/packages/eclipse-ide-cc-developers/keplersr2</a></li>
+<li>   Disable the GUI at startup to free up memory for R: <code>systemctl set-default multi-user.target</code></li>
+</ol>
+<h3 id="usage">Usage</h3>
+<p>To use this setup for development just start your VM headless, SSH into it and run:</p>
+<p><code>$ ~/eclipse/cpp-neon/eclipse/eclipse &amp;</code></p>
+<p>And eclipse will start up on your host desktop. It will run as if it was running on your host machine. Because you’re not running a full desktop environment on the VM, there will be enough memory for R, S and your host operating system to run.</p>
+
+            ]]>
+        </content>
+    </entry>
+    <entry>
+        <title>OpenWRT Download Rate Limiting</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/openwrt-download-rate-limiting.html"/>
+        <id>https://gerco.dev/openwrt-download-rate-limiting.html</id>
+
+        <updated>2022-02-22T19:12:15-05:00</updated>
+            <summary>
+                <![CDATA[
+                    As a parent to an 11 year old girl with an iPhone (no mobile data contract), I have a problem. The problem is that, when given the chance, she will sit and watch Youtube all day - every day. There are a few ways to&hellip;
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>As a parent to an 11 year old girl with an iPhone (no mobile data contract), I have a problem. The problem is that, when given the chance, she will sit and watch Youtube all day - every day. There are a few ways to solve that problem:</p>
+<ol>
+<li>Take the phone away</li>
+<li>Closely monitor the phone use and take it away after x minutes/hours</li>
+<li>Geek out</li>
+</ol>
+<p>Being a geek, the only real option is of course the third one. Besides, option number 1 would result in a lot of drama and option number 2 is way too much work. My wife and I have better things to do than constantly monitor whether her x minutes/hours are already up and an 11 year old doesn’t want nor should be under constant surveillance.</p>
+<p>There are a few requirements to the solution that would work for us:</p>
+<ol>
+<li>Watching videos needs to be possible but limited. We have no problem with watching videos but all day every day is not OK.</li>
+<li>There should not be any need for manual action. If we have to take any manual actions there will be times that we forget and enforcement will be inconsistent, making it useless.</li>
+<li>Messages through WhatsApp, iMessage, Instagram, etc should not be blocked. We live in suburbian USA and there is very limited mobility for teens here (no sidewalks, no bike roads so they have to be driven everywhere). Messages and such are a very important tool to stay in touch with friends socially.</li>
+</ol>
+<p>Rate limiting seems to fit all these options. Her iPhone gets some quota (say 500MB) per day and after that the connection slows down to 16kB/s. This will not allow videos but message and email will work fine.</p>
+<p>I looked around for ways of doing this with my OpenWRT router (<a href="https://omnia.turris.cz/en/">Turris Omnia</a>) and ran into a few issues: Most of the rate limiting examples limit only upstream bandwidth and I want to mostly limit downstream instead. Some of the solutions used magic incantations for the SQM system (traffic shaping) that I found more complex than worth getting in to. I found the CONNMARK iptables target and it seems to fit the bill exactly:</p>
+<p>First MARK all packets from my daughter’s device:</p>
+<pre><code>iptables -t nat -A prerouting_rule -m mac --mac-source 1c:91:48:xx:xx:xx -j MARK --set-mark 0x0A -m comment --comment &quot;iPhone SE&quot;
+</code></pre>
+<p>If you want to include more devices in this rule, just add more MARK rules, you can add as many mac addresses as you like. When all desired packets are marked, we need to transfer this mark to the connection that they are a part of:</p>
+<pre><code># If a packet is marked, make sure the connection is marked as well
+iptables -t nat -A prerouting_rule -m mark --mark 0xA -j CONNMARK --save-mark
+
+# On incoming packets, make sure to read the connection mark back into the packet
+iptables -t mangle -A PREROUTING -j CONNMARK --restore-mark
+</code></pre>
+<p>Because connection tracking is required for NAT anyway, this doesn’t cause a lot of extra load on the router. All open connections from one of the marked devices will now be marked with the value 0xA, which we will use later to limit the download speed.</p>
+<p>To do the actual rate limiting I used the hashlimit module. It can be found in opkg so it’s easily installed on OpenWRT.</p>
+<pre><code>iptables  -A forwarding_rule -m mark --mark 0xA -m conntrack --ctstate ESTABLISHED,RELATED -m hashlimit --hashlimit-name &quot;Over quota&quot; --hashlimit-above 16kb/s -j DROP
+</code></pre>
+<p><em>Please note: The above rules are all OpenWRT specific since the chain names used in them are created by the OpenWRT firewall scripts. Substitute appropriate chains if using this method on some other Linux distribution.</em></p>
+<p>Now that we have a rate limit in place, we need to be able to turn it on and off based on the amount of bandwidth consumed. There are ways of doing this with pure iptables but since those counters are not very reliable (they get wiped at every firewall reload), I decided to use <a href="https://project.turris.cz/en/software">Majordomo</a> which was already included in my Turris Omnia router by default. It writes bandwidth statistics to /tmp in CSV format that we can easily use.</p>
+<p>I very poorly cobbled together a <a href="https://gist.github.com/gerco/e0d6d4876eb4d77e3dabfb3e6a3faf21">Python script</a> to check whether the quota has been exceeded and call it from cron every minute. This creates a marker file that I check for in /etc/firewall.user and creates the above iptables rules when the quota has been exceeded.</p>
+<p>For now, this works well. I’m sure many improvements can be made and I’d like to get rid of the Python script and the cron job. I’m sure there are ways of limiting download speed using only iptables that I haven’t found yet but it was a fun evening.</p>
+<p><em>As a last note: If you have IPv6 connectivity at home, make sure to duplicate all these rules in ip6tables as well. Youtube works fine over IPv6</em></p>
+
+            ]]>
+        </content>
+    </entry>
+    <entry>
+        <title>Netatalk 3.1.8 on Ubuntu 15.10 via PPA</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/netatalk-318-on-ubuntu-1510-via-ppa.html"/>
+        <id>https://gerco.dev/netatalk-318-on-ubuntu-1510-via-ppa.html</id>
+
+        <updated>2022-02-22T19:09:19-05:00</updated>
+            <summary>
+                <![CDATA[
+                    (This post serves mostly as personal documentation and as a place to host relevant links) Netatalk is a daemon that runs an Apple File Protocol (AFP) service on a Linux or other *nix machine that will allow Macs to use it as a file server&hellip;
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>(This post serves mostly as personal documentation and as a place to host relevant links)</p>
+<p>Netatalk is a daemon that runs an Apple File Protocol (AFP) service on a Linux or other *nix machine that will allow Macs to use it as a file server and Time Machine backup target. This is great if you have a few Macs in your house and don’t want to buy a big enough Time Capsule to back them all up. With Netatalk you can back them up to your Linux file server. </p>
+<p>Ubuntu only provides Netatalk version 2.x in their repos and that version has some issues with Time Machine reliability. Because of that I was looking to install the latest version of Netatalk on my Ubuntu 15.10 server (to, hopefully, see the dreaded “Time Machine must create a new backup for you”-message a little less often). To my great surprise there were some PPAs for older Ubuntu versions but none for 15.10 that I could find.</p>
+<p>I found some instructions to <a href="http://netatalk.sourceforge.net/wiki/index.php/Install_Netatalk_3.1.8_on_Ubuntu_15.10_Wily">install from source</a>, but I didn’t want to do that. Installing from source requires installing a boatload of build dependencies that I don’t want on my “production” server. Besides, on a system that is based on a package manager, installing from source should be avoided if at all possible. It’s asking for trouble down the line.</p>
+<p>I decided to try and create my own PPA for this Netatalk/Ubuntu combination and to limit the cruft I had to install on my server tried to create a Docker-based environment for building the package based on an <a href="https://launchpad.net/~igoritl/+archive/ubuntu/netatalk">existing PPA for an older version</a> existing PPA for an older version. Fast forward 2 days of digging into the depths of the Ubuntu/Debian build system, how PPAs work and a few hundred builds failed for whatever reasons and here is the result.</p>
+<ul>
+<li>PPA: <a href="https://launchpad.net/~gercod/+archive/ubuntu/netatalk">https://launchpad.net/~gercod/+archive/ubuntu/netatalk</a></li>
+<li>Source: <a href="https://github.com/gerco/netatalk-ppa">https://github.com/gerco/netatalk-ppa</a></li>
+</ul>
+<p>To install:</p>
+<pre><code>$ sudo apt-add-repository ppa:gercod/netatalk
+$ sudo apt-get update
+$ sudo apt-get install netatalk
+</code></pre>
+<p>See <a href="http://netatalk.sourceforge.net/wiki/index.php/Install_Netatalk_3.1.8_on_Ubuntu_15.10_Wily">http://netatalk.sourceforge.net/wiki/index.php/Install_Netatalk_3.1.8_on_Ubuntu_15.10_Wily</a> for initial configuration advice. Make sure to enable the service at boot:</p>
+<pre><code>$ sudo systemctl enable netatalk
+</code></pre>
+
+            ]]>
+        </content>
+    </entry>
+    <entry>
+        <title>Anonymous user counting through DNS</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/anonymous-user-counting-through-dns.html"/>
+        <id>https://gerco.dev/anonymous-user-counting-through-dns.html</id>
+
+        <updated>2022-02-22T19:07:46-05:00</updated>
+            <summary>
+                <![CDATA[
+                    Imagine the following scenario: You are maintaining a free application and you have a fair number of users, but you don’t know exactly how many. Because you want to understand your user base a bit better, you would like to count the number of users.
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>Imagine the following scenario:
+You are maintaining a free application and you have a fair number of users, but you don’t know exactly how many. Because you want to understand your user base a bit better, you would like to count the number of users. This is the situation I found myself in recently.</p>
+<h3 id="requirements">Requirements</h3>
+<p>My requirements for a system like this were as follows:</p>
+<ul>
+<li>Must work through restrictive corporate proxies;</li>
+<li>Collect the minimum amount of data possible;</li>
+<li>Do not annoy users;</li>
+<li>Little application size increase;</li>
+<li>Count number of users as accurately as feasible.</li>
+</ul>
+<p>I investigated a few options, most of those were unacceptable to me for various reasons. They would either bloat my application, collect too much data or cause issues with the user’s network configuration. A lot of my users are behind a corporate proxy and my application is implemented in Java. Those of you who are familiar with Java will know that HTTP requests will - more or less randomly - pop up a proxy authentication dialog. Since I didn’t want to annoy my users I needed another solution.</p>
+<p>I came up with a solution that fulfills most of the above requirements:</p>
+<ul>
+<li>Works through proxies because the application never makes a request to any server outside the corporate network;</li>
+<li>Collects only a random unique id that gets created on application startup. No user data is included whatsoever, not even the user’s IP address.</li>
+<li>Cannot pop up authentication dialogs or cause application delays due to firewalls restricting access to outside;</li>
+<li>Does not require any new libraries since all the code is already built in to in every OS.</li>
+</ul>
+<p>This is how it works:</p>
+<ul>
+<li>On application startup, the application creates a random uuid;</li>
+<li>The application then attempts to resolve $uuid.stats.domainname.tld through DNS</li>
+<li>The DNS zone file for domainname.tld specifies a custom DNS server for stats.domainname.tld.</li>
+<li>stats.domainname.tld is running a custom DNS server that logs queries to $uuid.stats.domainname.tld.</li>
+</ul>
+<p>There you have it, just count the unique ids in the DNS server’s log file and you’re done. This even has the added bonus of working on machines that have no internet access for security reasons. Even though they cannot connect anywhere outside the corporate network, they mostly still can resolve DNS queries! Now on to the implementation, which is surprisingly simple:</p>
+<h3 id="client">Client</h3>
+<p>In the client application, all you need to do is generate a unique id and resolve it. In Java, this can be done as follows:</p>
+<pre><code class="language-java">public void getLatestVersionNumber() {
+  Hashtable&lt;String, String&gt; env = new Hashtable&lt;String, String&gt;();    
+  env.put(Context.INITIAL_CONTEXT_FACTORY, &quot;com.sun.jndi.dns.DnsContextFactory&quot;);
+  DirContext ctx = new InitialDirContext(env);
+  Attributes attrs = ctx.getAttributes(uuid + &quot;.stats.domainname.tld&quot;, new String[] { &quot;TXT&quot; }); 
+  Attribute attr = attrs.get(&quot;TXT&quot;);
+  return attr.get().toString();
+}
+</code></pre>
+<p>In this case, I’m retrieving the TXT record, since that will allow my custom DNS server to be able return some information to the user, like the most recent version of the application (to alert the user an update is available, for example).</p>
+<p>###DNS configuration
+The client code above causes the application to send a DNS request to resolve the domain name asked for: $uuid.stats.domainname.tld. In order to resolve this, the operating system will first need to resolve (in order): tld, dominate.tld and finally stats.domainname.tld. We can’t (or don’t want to) control which DNS server serves .tld or domainname.tld so we enter the following records to direct queries for *.stats.domainname.tld to our custom server:</p>
+<pre><code>; Set nameserver for stats.domainname.tld. to stats-ns.domainname.tld
+stats     IN     NS     stats-ns
+
+; Set IP address for stats-ns.domainname.tld. to 1.2.3.4
+stats-ns  IN     A     1.2.3.4
+</code></pre>
+<p>Replace 1.2.3.4 with the IP address of the machine that you will be running your custom DNS server on. You will need root-access to that server since a DNS server must run on port 53. A shared hosting server will not work.</p>
+<p>###DNS Server
+On to the meat of the matter. Since I like experimenting with programming languages and my current language-du-jour is <a href="http://golang.org">Go</a>, I’m implementing this server in Go. I used the excellent <a href="https://github.com/miekg/dns">dns</a> library from <a href="http://miek.nl">Miek Gieben</a>. The server is based on his “reflect” example (with most of the code removed). The only interesting part is below:</p>
+<pre><code class="language-go">func (h DNSHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
+     m := new(dns.Msg)
+     m.SetReply(r)
+
+     for _, q := range r.Question {
+          // We only respond to TXT queries. Anything else does not exist on this DNS server
+          if q.Qtype == dns.TypeTXT {
+               var responseText string
+
+               if strings.HasSuffix(q.Name, &quot;.&quot;+h.config.DomainName) {
+                    uuid := q.Name[:strings.Index(q.Name, &quot;.&quot;)]
+                    c := *newCheckIn(uuid, time.Now())
+                    saveCheckin(c)
+
+                    responseText = getLatestApplicationVersion()
+               } else {
+                    // The query is for config.DomainName, reply nothing
+               }
+
+               if len(responseText) &gt; 0 {
+                    t := new(dns.TXT)
+                    t.Hdr = dns.RR_Header{Name: q.Name, Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: 3600}
+                    t.Txt = []string{responseText}
+                    m.Answer = append(m.Answer, t)
+               }
+          }
+     }
+
+     w.WriteMsg(m)
+}
+</code></pre>
+<p>This simplified code stores the unique ids received and replies with the latest application version. </p>
+<p>That’s all there is to it! Completely anonymous user counting without collecting any personal data, not even the user’s IP address. Naturally this only counts instances of the application and not the number of humans using it, but this is as close as you’re likely going to get.</p>
+
+            ]]>
+        </content>
+    </entry>
+    <entry>
+        <title>Van iCloud bug naar nieuwe iPhone</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/van-icloud-bug-naar-nieuwe-iphone.html"/>
+        <id>https://gerco.dev/van-icloud-bug-naar-nieuwe-iphone.html</id>
+
+        <updated>2022-02-22T19:06:00-05:00</updated>
+            <summary>
+                <![CDATA[
+                    TL;DR versie: Voor niets nieuwe iPhone gekregen door totaal ongerelateerd probleem, yay! Ik woon in de VS, we hebben hier AT&amp;T en Apple stores met genius bars. Een paar dagen terug kreeg ik een iPhone 4s op de werkbank die al maanden lang batterijproblemen had.
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>TL;DR versie: Voor niets nieuwe iPhone gekregen door totaal ongerelateerd probleem, yay!</p>
+<hr>
+<p><em>Ik woon in de VS, we hebben hier AT&amp;T en Apple stores met genius bars.</em></p>
+<p>Een paar dagen terug kreeg ik een iPhone 4s op de werkbank die al maanden lang batterijproblemen had. Hij was binnen een uur of 4-6 leeg en sinds een paar dagen verbruikte het ding ook ongelofelijke hoeveelheden data (400MB/dag) terwijl de gebruiker hem gewoon op de tafel had liggen en niet aanraakte. Dit dataverbruik viel pas op toen de gebruiker thuis tijdelijk geen Wifi meer had door een verhuizing.</p>
+<p>Na AT&amp;T gebeld te hebben en hun instructies te hebben opgevolgd over het uitzetten van diagnostic reports, ophalen van email, afsluiten van background apps en het opnieuw aanmaken van iCloud en email accounts hebben we het ding eens een dag laten liggen en helemaal niets mee gedaan. Gevolg: ruwweg 300MB data verstookt, dat was het dus niet.</p>
+<p>Volgende stap: We hangen het ding aan een mac met XCode en gaan eens naar de Console kijken. Daar staan wat interessante entries in:</p>
+<pre><code>Aug  2 14:53:20 unknown dataaccessd[52] &lt;Notice&gt;: xxxxxx|CardDAV|Error|Yikes: failedToFinishInitialSync:error: https://xxxx.xxxxxxx%40xxxxx.xx@p05-contacts.icloud.com/999999999/carddavhome/card/ Error Domain=CoreDAVErrorDomain Code=7 &quot;The operation couldn’-t -b-e -c-o-m-p-l-e-t-e-d-. -(-C-o-r-e-D-A-V-E-r-r-o-r-D-o-m-a-i-n -e-r-r-o-r -7-.-)-&quot;
+Aug  2 14:53:20 unknown wifid[28] &lt;Error&gt;: WiFi:[xxxxxxxxx.xxxxxxx]: Client dataaccessd set type to background application
+Aug  2 14:53:22 unknown dataaccessd[52] &lt;Notice&gt;: xxxxxx|CardDAV|Error|Yikes: failedToFinishInitialSync:error: https://xxxx.xxxxxxx%40xxxxx.xx@p05-contacts.icloud.com/999999999/carddavhome/card/ Error Domain=CoreDAVErrorDomain Code=7 &quot;The operation couldn’-t -b-e -c-o-m-p-l-e-t-e-d-. -(-C-o-r-e-D-A-V-E-r-r-o-r-D-o-m-a-i-n -e-r-r-o-r -7-.-)-&quot;
+Aug  2 14:53:22 unknown wifid[28] &lt;Error&gt;: WiFi:[xxxxxxxxx.xxxxxxx]: Client dataaccessd set type to background application
+</code></pre>
+<p>Deze logregels herhaalden zich elke paar seconden. Er gaat overduidelijk iets mis met de iCloud sync, maar wat? iCloud uitzetten hielp, maar is natuurlijk niet echt een oplossing. iCloud account opnieuw instellen hielp niet en zelfs de telefoon compleet restoren had geen enkele zin. Op naar de genius bar!</p>
+<p>Aangekomen bij de dichtsbijzijnde Apple store vragen we de lokale genius om naar het probleem te kijken. De genius hoort me even aan en controleert het serienummer van de iPhone. Zonder te aarzelen (en zonder naar het probleem te kijken) pakt de beste man een splinternieuwe iPhone 4s en begint de omruilprocedure. Bij navraag weet hij ook niet wat het probleem is maar hij is er zeker van dat een nieuwe telefoon het wel zal oplossen, wie ben ik om daar tegenin te gaan?</p>
+<p>Een nieuwe iPhone later stellen we de iCloud account van de gebruiker in en alles werkt prima! Helaas blijkt na verdere inspectie dat maar enkele tientallen van de 386 contacten op de telefoon zijn aangekomen. Iets verder kijkend zien we dat de ~340 ontbrekende contacten ook niet op iCloud staan. De genius zet de contacten op de old-skool manier over vanaf de oude telefoon en we wachten even tot de telefoon alles gesynced heeft.</p>
+<p>Tot onze grote verbazing synchroniseert de nieuwe iPhone slechts 20 contacten met iCloud en vervalt daarna direct in de lus uit de bovenstaande logs. Er is dus iets speciaals met de contacten aan de hand waar iCloud zich in verslikt. Dit zorgt voor een oneindige synchronisatie lus die de batterij leegzuigt en massaal data verbruikt!</p>
+<p>Wat blijkt nu: De contacten op deze telefoon zijn ooit eens (door diezelfde Apple store) vanaf een Windows Mobile (HTC Diamond) telefoon naar de iPhone gekopieerd en er stonden een berg notities met Russische tekst bij. Die notities zijn tijdens dat proces corrupt geraakt en iCloud verslikt zich daar blijkbaar nogal in. Na het verwijderen van alle corrupte notities synchroniseert de telefoon prima en werkt alles naar behoren, met dien verstande dat de gebruiker wel met een nieuwe iPhone de winkel uitloopt terwijl er met de oorspronkelijke telefoon helemaal niets mis was.</p>
+<p>Wie we moeten bedanken voor de nieuwe telefoon is niet helemaal duidelijk, maar bedankt Apple/Microsoft/HTC!</p>
+
+            ]]>
+        </content>
+    </entry>
+    <entry>
+        <title>Google Guice and plugins</title>
+        <author>
+            <name>Gerco Dries</name>
+        </author>
+        <link href="https://gerco.dev/google-guice-and-plugins.html"/>
+        <id>https://gerco.dev/google-guice-and-plugins.html</id>
+
+        <updated>2022-02-22T19:04:53-05:00</updated>
+            <summary>
+                <![CDATA[
+                    While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders. Lets look at the problem first. Guice favors constructor&hellip;
+                ]]>
+            </summary>
+        <content type="html">
+            <![CDATA[
+                <p>While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders.</p>
+<p>Lets look at the problem first. Guice favors constructor injection and that often results in big, ugly constructors with dozens of arguments. In my experience this mostly happens when constructing GUI containers with a lot of “static” items (menus, tabs, lists of configuration pages, etc). These lists of items are not truly static because we would like to be able to extend them through plugins, for example.</p>
+<p>When we follow a naive approach, a constructor for a JFrame that holds a bunch of tabs may look like this:</p>
+<pre><code class="language-java">@Inject
+public MainFrame(
+    Panel1 p1, Panel2 p2, Panel3 p3, Panel4 p4,
+    Panel5 p5, Panel6 p6, Panel7 p7, Panel8 p8)
+{
+    addTab(p1);
+    addTab(p2);
+    addTab(p3);
+    addTab(p4);
+    addTab(p5);
+    addTab(p6);
+    addTab(p7);
+    addTab(p8);
+}
+</code></pre>
+<p>This has the advantage that it’s perfectly clear which tabs this frame will host and in which order they will appear. Aside from that, it would be easy to add some code to listen to application events and enable and disable specific tabs when required. This code does lack a few things though: It’s a lot of work to add tabs to it and it doesn’t allow for adding more tabs after the application has been distributed (plugins).</p>
+<p>To allow for adding tabs we need to solve several problems:</p>
+<ul>
+<li>Allow for addition of tabs</li>
+<li>Allow tab order to be determined by plugins or the user</li>
+<li>Provide some way for tabs to enable/disable based on application state</li>
+</ul>
+<p>Lets start one at a time and first make the list of tabs dynamic from the point of view of the frame that will host them:</p>
+<pre><code class="language-java">@Inject
+public MainFrame(Set&lt;JComponent&gt; panels)
+{
+    for(JComponent panel: panels)
+    {
+        addTab(panel);
+    }
+}
+</code></pre>
+<p>Now we are not injecting each tab separately, but we inject instead a Set of tabs. This removes the requirement for the frame to know exactly which tabs exist and makes the code somewhat simpler. We still have to specify which tabs go in this frame though. This is done in the Guice Module:</p>
+<pre><code class="language-java">public class UIModule extends AbstractModule {
+
+    @Override
+    protected void configure() {
+        Multibinder&lt;JComponent&gt; panels = Multibinder.newSetBinder(binder(), JComponent.class);
+        panels.addBinding().to(Panel1.class);
+        panels.addBinding().to(Panel2.class);
+        panels.addBinding().to(Panel3.class);
+        panels.addBinding().to(Panel4.class);
+        panels.addBinding().to(Panel5.class);
+        panels.addBinding().to(Panel6.class);
+        panels.addBinding().to(Panel7.class);
+        panels.addBinding().to(Panel8.class);
+    }
+}
+</code></pre>
+<p>So what has really changed? We moved the list of panels from one piece of Java code to another piece of Java code. It’s still Java code and this didn’t help one bit to implement a plugin architecture.</p>
+<p>This is where the multi-module aspect of the Multibinder comes in. When a different Guice module defines a binder for the same type (in this case <code>Set&lt;JComponent&gt;</code>), they will be merged. At runtime, there will only be one <code>Set&lt;JComponent&gt;</code> and all tabs from all Modules will be presented in the frame.</p>
+<p><code>Set&lt;JComponent&gt;</code> is a little to generic of a type to be using for this purpose though. We want to do more with this. We need (at a minimum) to specify a name and a way to get a reference to the actual <code>JComponent</code> so lets start by defining an interface:</p>
+<pre><code class="language-java">public interface UITab {
+    public String getUITabName();
+    public JComponent getUITabComponent();
+}
+</code></pre>
+<p>This interface defines a few methods we’ll need to display our tabs. <code>getUITabName</code> should return the display name for the tab and <code>getUITabComponent</code> is expected to return a reference to the actual UI component.</p>
+<p>Each Panel class can now implement this interface, like so:</p>
+<pre><code class="language-java">public class Panel1 extends JPanel implements UITab {
+    public String getUITabName() {
+        return &quot;Panel 1&quot;;
+    }
+
+    public JComponent getUITabComponent() {
+        return this;
+    }
+}
+</code></pre>
+<p>Each Panel can now be defined in its own module like this:</p>
+<pre><code class="language-java">public class Panel1Module extends AbstractModule {
+    @Override
+    protected void configure() {
+        Multibinder&lt;UITab&gt; panels = Multibinder.newSetBinder(binder(), UITab.class);
+        panels.addBinding().to(Panel1.class);
+    }
+}
+</code></pre>
+<p>Now that each of the panels is defined in its own module, we can split them out into separate projects (plugins). Each Panel can get its own jar file. All we still need is a way for the main application to detect the available plugins and load them. The <a href="http://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html">ServiceLoader</a> class is a good possibility. Some classpath detection of an appliction specific plugin descriptor or an XML file listing all installed plugins are also possible.</p>
+
+            ]]>
+        </content>
+    </entry>
+</feed>

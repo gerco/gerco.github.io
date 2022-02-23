@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>Van iCloud bug naar nieuwe iPhone - gerco.dev </title>
+        <meta name="description" content="TL;DR versie: Voor niets nieuwe iPhone gekregen door totaal ongerelateerd probleem, yay! Ik woon in de VS, we hebben hier AT&amp;T en Apple stores met genius bars. Een paar dagen terug kreeg ik een iPhone 4s op de werkbank die al maanden lang batterijproblemen had." />
+         
+        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <link rel="canonical" href="https://gerco.dev/van-icloud-bug-naar-nieuwe-iphone.html">
+        
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+
+        
+        <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
+        <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/van-icloud-bug-naar-nieuwe-iphone.html"},"headline":"Van iCloud bug naar nieuwe iPhone","datePublished":"2012-08-04T19:05","dateModified":"2022-02-22T19:06","description":"TL;DR versie: Voor niets nieuwe iPhone gekregen door totaal ongerelateerd probleem, yay! Ik woon in de VS, we hebben hier AT&amp;T en Apple stores met genius bars. Een paar dagen terug kreeg ik een iPhone 4s op de werkbank die al maanden lang batterijproblemen had.","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        
+        
+    </head>
+    <body>
+        <div class="site-container">
+   <header class="top" id="js-header">
+      <a class="logo" href="https://gerco.dev/">
+            gerco.dev
+      </a>
+   </header>
+<main>
+      <article class="post">
+         <div class="hero">
+             
+             
+            <header class="hero__content">
+               <div class="wrapper">
+                     <div class="post__meta">
+                        <time datetime="2012-08-04T19:05">
+                              August 4, 2012
+                        </time>
+                     </div>
+                  <h1>
+                     Van iCloud bug naar nieuwe iPhone
+                  </h1>
+               </div>
+            </header>
+         </div>
+
+         <div class="wrapper post__entry">           
+            <p>TL;DR versie: Voor niets nieuwe iPhone gekregen door totaal ongerelateerd probleem, yay!</p>
+<hr>
+<p><em>Ik woon in de VS, we hebben hier AT&amp;T en Apple stores met genius bars.</em></p>
+<p>Een paar dagen terug kreeg ik een iPhone 4s op de werkbank die al maanden lang batterijproblemen had. Hij was binnen een uur of 4-6 leeg en sinds een paar dagen verbruikte het ding ook ongelofelijke hoeveelheden data (400MB/dag) terwijl de gebruiker hem gewoon op de tafel had liggen en niet aanraakte. Dit dataverbruik viel pas op toen de gebruiker thuis tijdelijk geen Wifi meer had door een verhuizing.</p>
+<p>Na AT&amp;T gebeld te hebben en hun instructies te hebben opgevolgd over het uitzetten van diagnostic reports, ophalen van email, afsluiten van background apps en het opnieuw aanmaken van iCloud en email accounts hebben we het ding eens een dag laten liggen en helemaal niets mee gedaan. Gevolg: ruwweg 300MB data verstookt, dat was het dus niet.</p>
+<p>Volgende stap: We hangen het ding aan een mac met XCode en gaan eens naar de Console kijken. Daar staan wat interessante entries in:</p>
+<pre><code>Aug  2 14:53:20 unknown dataaccessd[52] &lt;Notice&gt;: xxxxxx|CardDAV|Error|Yikes: failedToFinishInitialSync:error: https://xxxx.xxxxxxx%40xxxxx.xx@p05-contacts.icloud.com/999999999/carddavhome/card/ Error Domain=CoreDAVErrorDomain Code=7 &quot;The operation couldn’-t -b-e -c-o-m-p-l-e-t-e-d-. -(-C-o-r-e-D-A-V-E-r-r-o-r-D-o-m-a-i-n -e-r-r-o-r -7-.-)-&quot;
+Aug  2 14:53:20 unknown wifid[28] &lt;Error&gt;: WiFi:[xxxxxxxxx.xxxxxxx]: Client dataaccessd set type to background application
+Aug  2 14:53:22 unknown dataaccessd[52] &lt;Notice&gt;: xxxxxx|CardDAV|Error|Yikes: failedToFinishInitialSync:error: https://xxxx.xxxxxxx%40xxxxx.xx@p05-contacts.icloud.com/999999999/carddavhome/card/ Error Domain=CoreDAVErrorDomain Code=7 &quot;The operation couldn’-t -b-e -c-o-m-p-l-e-t-e-d-. -(-C-o-r-e-D-A-V-E-r-r-o-r-D-o-m-a-i-n -e-r-r-o-r -7-.-)-&quot;
+Aug  2 14:53:22 unknown wifid[28] &lt;Error&gt;: WiFi:[xxxxxxxxx.xxxxxxx]: Client dataaccessd set type to background application
+</code></pre>
+<p>Deze logregels herhaalden zich elke paar seconden. Er gaat overduidelijk iets mis met de iCloud sync, maar wat? iCloud uitzetten hielp, maar is natuurlijk niet echt een oplossing. iCloud account opnieuw instellen hielp niet en zelfs de telefoon compleet restoren had geen enkele zin. Op naar de genius bar!</p>
+<p>Aangekomen bij de dichtsbijzijnde Apple store vragen we de lokale genius om naar het probleem te kijken. De genius hoort me even aan en controleert het serienummer van de iPhone. Zonder te aarzelen (en zonder naar het probleem te kijken) pakt de beste man een splinternieuwe iPhone 4s en begint de omruilprocedure. Bij navraag weet hij ook niet wat het probleem is maar hij is er zeker van dat een nieuwe telefoon het wel zal oplossen, wie ben ik om daar tegenin te gaan?</p>
+<p>Een nieuwe iPhone later stellen we de iCloud account van de gebruiker in en alles werkt prima! Helaas blijkt na verdere inspectie dat maar enkele tientallen van de 386 contacten op de telefoon zijn aangekomen. Iets verder kijkend zien we dat de ~340 ontbrekende contacten ook niet op iCloud staan. De genius zet de contacten op de old-skool manier over vanaf de oude telefoon en we wachten even tot de telefoon alles gesynced heeft.</p>
+<p>Tot onze grote verbazing synchroniseert de nieuwe iPhone slechts 20 contacten met iCloud en vervalt daarna direct in de lus uit de bovenstaande logs. Er is dus iets speciaals met de contacten aan de hand waar iCloud zich in verslikt. Dit zorgt voor een oneindige synchronisatie lus die de batterij leegzuigt en massaal data verbruikt!</p>
+<p>Wat blijkt nu: De contacten op deze telefoon zijn ooit eens (door diezelfde Apple store) vanaf een Windows Mobile (HTC Diamond) telefoon naar de iPhone gekopieerd en er stonden een berg notities met Russische tekst bij. Die notities zijn tijdens dat proces corrupt geraakt en iCloud verslikt zich daar blijkbaar nogal in. Na het verwijderen van alle corrupte notities synchroniseert de telefoon prima en werkt alles naar behoren, met dien verstande dat de gebruiker wel met een nieuwe iPhone de winkel uitloopt terwijl er met de oorspronkelijke telefoon helemaal niets mis was.</p>
+<p>Wie we moeten bedanken voor de nieuwe telefoon is niet helemaal duidelijk, maar bedankt Apple/Microsoft/HTC!</p>
+            
+         </div>
+
+            <footer class="wrapper post__footer">
+
+
+
+                  <div class="post__share">
+                        <a
+                           href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fgerco.dev%2Fvan-icloud-bug-naar-nieuwe-iphone.html"
+                           class="js-share facebook"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#facebook"/>
+                           </svg>
+                           <span>Facebook</span>
+                        </a>
+                     
+                        <a
+                           href="https://twitter.com/share?url=https%3A%2F%2Fgerco.dev%2Fvan-icloud-bug-naar-nieuwe-iphone.html&amp;via=gdries&amp;text=Van%20iCloud%20bug%20naar%20nieuwe%20iPhone"
+                           class="js-share twitter"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#twitter"/>
+                           </svg>
+                           <span>Twitter</span>
+                        </a>
+                     
+                     
+                     
+                        <a
+                           href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fgerco.dev%2Fvan-icloud-bug-naar-nieuwe-iphone.html"
+                           class="js-share linkedin"
+                           rel="nofollow noopener noreferrer">
+                           <svg class="icon" aria-hidden="true" focusable="false">
+                              <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#linkedin"/>
+                           </svg>
+                           <span>LinkedIn</span>
+                        </a>
+                     
+                     
+                  </div>
+
+            </footer>
+      </article>
+
+            <nav class="post__nav">
+               <div class="post__nav-inner">
+                     <div class="post__nav-prev">
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-prev"/>
+                        </svg>
+
+                        <a href="https://gerco.dev/google-guice-and-plugins.html" class="invert post__nav-link" rel="prev">
+                           <span>Previous</span>
+                           Google Guice and plugins
+                        </a>
+                     </div>
+                     <div class="post__nav-next">
+                        <a href="https://gerco.dev/anonymous-user-counting-through-dns.html" class="invert post__nav-link" rel="next">
+                           <span>Next</span>
+                           Anonymous user counting through DNS
+                        </a>
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-next"/>
+                        </svg>
+                     </div>
+               </div>
+            </nav>
+
+
+
+
+</main>
+<footer class="footer">
+        <div class="footer__copyright">
+            <p>Powered by Publii</p>
+        </div>
+       <button class="footer__bttop js-footer__bttop" aria-label="Back to top"> 
+           <svg>
+               <title>Back to top</title>
+               <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#toparrow" />
+           </svg>
+       </button>   
+</footer>
+</div>
+
+<script>
+   window.publiiThemeMenuConfig = {    
+        mobileMenuMode: 'sidebar',
+        animationSpeed: 300,
+        submenuWidth: 'auto',
+        doubleClickTime: 500,
+        mobileMenuExpandableSubmenus: true, 
+        relatedContainerForOverlayMenuSelector: '.top',
+   };
+</script>
+<script defer src="https://gerco.dev/assets/js/scripts.min.js?v=48e9576b9741cf2a93ab25c5689c9f5d"></script>
+    <script>        
+        var images = document.querySelectorAll('img[loading]');
+
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }
+    </script>
+
+
+</body>
+</html>
