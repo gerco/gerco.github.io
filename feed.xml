@@ -3,7 +3,7 @@
     <title>gerco.dev</title>
     <link href="https://gerco.dev/feed.xml" rel="self" />
     <link href="https://gerco.dev" />
-    <updated>2026-06-12T14:54:37-04:00</updated>
+    <updated>2026-06-12T15:01:40-04:00</updated>
     <author>
         <name>Gerco Dries</name>
     </author>
@@ -14,8 +14,8 @@
         <author>
             <name>Gerco Dries</name>
         </author>
-        <link href="https://gerco.dev/keeping-secrets-out-of-your-shell-environment-2.html"/>
-        <id>https://gerco.dev/keeping-secrets-out-of-your-shell-environment-2.html</id>
+        <link href="https://gerco.dev/keeping-secrets-out-of-your-shell-environment.html"/>
+        <id>https://gerco.dev/keeping-secrets-out-of-your-shell-environment.html</id>
 
         <updated>2026-06-12T14:36:15-04:00</updated>
             <summary type="html">
