@@ -5,18 +5,19 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>T-Mobile US and OpenVPN - gerco.dev </title>
-        <meta name="description" content="Recently, I switched my familie’s mobile phone plan to T-Mobile and this has caused some issues with the VPN connection to my home from my phone. At times, the VPN would not come up at all and other times the VPN would connect just fine,&hellip;" />
+        <meta name="description" content="Recently, I switched my familie’s mobile phone plan to T-Mobile and this has caused some issues with the VPN connection to my home from my phone. At times, the VPN would not come up at all and other times the VPN would connect just fine,&hellip;">
          
-        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <meta name="generator" content="Publii Open-Source CMS for Static Site">
+
         <link rel="canonical" href="https://gerco.dev/t-mobile-us-and-openvpn.html">
         
-        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
-<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" title="gerco.dev - RSS">
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" title="gerco.dev - JSON">
 
         
         <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
         <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
-        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/t-mobile-us-and-openvpn.html"},"headline":"T-Mobile US and OpenVPN","datePublished":"2019-03-01T19:20","dateModified":"2022-02-22T19:20","description":"Recently, I switched my familie’s mobile phone plan to T-Mobile and this has caused some issues with the VPN connection to my home from my phone. At times, the VPN would not come up at all and other times the VPN would connect just fine,&hellip;","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/t-mobile-us-and-openvpn.html"},"headline":"T-Mobile US and OpenVPN","datePublished":"2019-03-01T19:20-05:00","dateModified":"2022-02-22T19:20-05:00","description":"Recently, I switched my familie’s mobile phone plan to T-Mobile and this has caused some issues with the VPN connection to my home from my phone. At times, the VPN would not come up at all and other times the VPN would connect just fine,&hellip;","author":{"@type":"Person","name":"Gerco Dries","url":"https://gerco.dev/authors/gerco-dries/"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
         
         
     </head>
@@ -47,12 +48,7 @@
          </div>
 
          <div class="wrapper post__entry">           
-            <p>Recently, I switched my familie’s mobile phone plan to T-Mobile and this has caused some issues with the VPN connection to my home from my phone. At times, the VPN would not come up at all and other times the VPN would connect just fine, but no data would flow. Even stranger were the times that the VPN connection came up and appeared to work fine until I downloaded a file or attempted to play some media from my <a href="https://emby.media">Emby</a> server.</p>
-<p>After much testing and googling around, I finally found that the issue had to do with the MTU (essentially: maximum packet size) via T-Mobile. I’m not quite sure of the specific details, but as far as I’ve been able to determine the problem is that T-Mobile uses a 4-over-6 tunneling system to tunnel IPv4 traffic over their IPv6-only mobile network. Whether that is true or not can only be determined by T-Mobile. They are not very helpful on their forums, referring to the fact that VPN is unsupported and they cannot give any technical details or assistance. Packets that are larger than some threshold appear to get blocked or lost in the T-Mobile network and cause the VPN connection to stall, breaking file transfers and media playback.</p>
-<p>Lowering the maximum packet size via <a href="https://openvpn.net/community-resources/reference-manual-for-openvpn-2-4/">OpenVPN configuration</a> turned out to be the solution to my problem. Simply add the following parameter to your client’s .ovpn file to lower the MTU for the connection:</p>
-<p><code>mssfix 1400</code></p>
-<p>The default value is 1450, which resulted in packets that were too large. Setting this to 1400 solved my problem. You may need a lower value or be able to use a higher one depending on various factors, your mileage may vary and some experimentation may be required to determine the correct value for your situation.</p>
-            
+            <p>Recently, I switched my familie’s mobile phone plan to T-Mobile and this has caused some issues with the VPN connection to my home from my phone. At times, the VPN would not come up at all and other times the VPN would connect just fine, but no data would flow. Even stranger were the times that the VPN connection came up and appeared to work fine until I downloaded a file or attempted to play some media from my <a href="https://emby.media">Emby</a> server.</p><p>After much testing and googling around, I finally found that the issue had to do with the MTU (essentially: maximum packet size) via T-Mobile. I’m not quite sure of the specific details, but as far as I’ve been able to determine the problem is that T-Mobile uses a 4-over-6 tunneling system to tunnel IPv4 traffic over their IPv6-only mobile network. Whether that is true or not can only be determined by T-Mobile. They are not very helpful on their forums, referring to the fact that VPN is unsupported and they cannot give any technical details or assistance. Packets that are larger than some threshold appear to get blocked or lost in the T-Mobile network and cause the VPN connection to stall, breaking file transfers and media playback.</p><p>Lowering the maximum packet size via <a href="https://openvpn.net/community-resources/reference-manual-for-openvpn-2-4/">OpenVPN configuration</a> turned out to be the solution to my problem. Simply add the following parameter to your client’s .ovpn file to lower the MTU for the connection:</p><p><code>mssfix 1400</code></p><p>The default value is 1450, which resulted in packets that were too large. Setting this to 1400 solved my problem. You may need a lower value or be able to use a higher one depending on various factors, your mileage may vary and some experimentation may be required to determine the correct value for your situation.</p>            
          </div>
 
             <footer class="wrapper post__footer">
@@ -110,6 +106,15 @@
                            NGINX reverse proxy with TLS passthrough
                         </a>
                      </div>
+                     <div class="post__nav-next">
+                        <a href="https://gerco.dev/keeping-secrets-out-of-your-shell-environment-2.html" class="invert post__nav-link" rel="next">
+                           <span>Next</span>
+                           Keeping secrets out of your shell environment
+                        </a>
+                        <svg width="1.041em" height="0.416em" aria-hidden="true">
+                           <use xlink:href="https://gerco.dev/assets/svg/svg-map.svg#arrow-next"/>
+                        </svg>
+                     </div>
                </div>
             </nav>
 
@@ -154,6 +159,7 @@
             }
         }
     </script>
+
 
 
 </body>

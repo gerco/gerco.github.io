@@ -5,18 +5,19 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Google Guice and plugins - gerco.dev </title>
-        <meta name="description" content="While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders. Lets look at the problem first. Guice favors constructor&hellip;" />
+        <meta name="description" content="While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders. Lets look at the problem first. Guice favors constructor&hellip;">
          
-        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <meta name="generator" content="Publii Open-Source CMS for Static Site">
+
         <link rel="canonical" href="https://gerco.dev/google-guice-and-plugins.html">
         
-        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
-<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" title="gerco.dev - RSS">
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" title="gerco.dev - JSON">
 
         
         <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
         <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
-        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/google-guice-and-plugins.html"},"headline":"Google Guice and plugins","datePublished":"2012-06-27T19:03","dateModified":"2022-02-22T19:04","description":"While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders. Lets look at the problem first. Guice favors constructor&hellip;","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/google-guice-and-plugins.html"},"headline":"Google Guice and plugins","datePublished":"2012-06-27T19:03-04:00","dateModified":"2022-02-22T19:04-05:00","description":"While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders. Lets look at the problem first. Guice favors constructor&hellip;","author":{"@type":"Person","name":"Gerco Dries","url":"https://gerco.dev/authors/gerco-dries/"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
         
         
     </head>
@@ -47,10 +48,7 @@
          </div>
 
          <div class="wrapper post__entry">           
-            <p>While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders.</p>
-<p>Lets look at the problem first. Guice favors constructor injection and that often results in big, ugly constructors with dozens of arguments. In my experience this mostly happens when constructing GUI containers with a lot of “static” items (menus, tabs, lists of configuration pages, etc). These lists of items are not truly static because we would like to be able to extend them through plugins, for example.</p>
-<p>When we follow a naive approach, a constructor for a JFrame that holds a bunch of tabs may look like this:</p>
-<pre><code class="language-java">@Inject
+            <p>While refactoring an application to use Google Guice for dependency injection, I ran across some challenges on how to modularize my application with plugins. It turns out that these is a relatively simple solution: Guice’s Multibinders.</p><p>Lets look at the problem first. Guice favors constructor injection and that often results in big, ugly constructors with dozens of arguments. In my experience this mostly happens when constructing GUI containers with a lot of “static” items (menus, tabs, lists of configuration pages, etc). These lists of items are not truly static because we would like to be able to extend them through plugins, for example.</p><p>When we follow a naive approach, a constructor for a JFrame that holds a bunch of tabs may look like this:</p><pre><code class="language-java">@Inject
 public MainFrame(
     Panel1 p1, Panel2 p2, Panel3 p3, Panel4 p4,
     Panel5 p5, Panel6 p6, Panel7 p7, Panel8 p8)
@@ -65,15 +63,12 @@ public MainFrame(
     addTab(p8);
 }
 </code></pre>
-<p>This has the advantage that it’s perfectly clear which tabs this frame will host and in which order they will appear. Aside from that, it would be easy to add some code to listen to application events and enable and disable specific tabs when required. This code does lack a few things though: It’s a lot of work to add tabs to it and it doesn’t allow for adding more tabs after the application has been distributed (plugins).</p>
-<p>To allow for adding tabs we need to solve several problems:</p>
-<ul>
+<p>This has the advantage that it’s perfectly clear which tabs this frame will host and in which order they will appear. Aside from that, it would be easy to add some code to listen to application events and enable and disable specific tabs when required. This code does lack a few things though: It’s a lot of work to add tabs to it and it doesn’t allow for adding more tabs after the application has been distributed (plugins).</p><p>To allow for adding tabs we need to solve several problems:</p><ul>
 <li>Allow for addition of tabs</li>
 <li>Allow tab order to be determined by plugins or the user</li>
 <li>Provide some way for tabs to enable/disable based on application state</li>
 </ul>
-<p>Lets start one at a time and first make the list of tabs dynamic from the point of view of the frame that will host them:</p>
-<pre><code class="language-java">@Inject
+<p>Lets start one at a time and first make the list of tabs dynamic from the point of view of the frame that will host them:</p><pre><code class="language-java">@Inject
 public MainFrame(Set&lt;JComponent&gt; panels)
 {
     for(JComponent panel: panels)
@@ -82,8 +77,7 @@ public MainFrame(Set&lt;JComponent&gt; panels)
     }
 }
 </code></pre>
-<p>Now we are not injecting each tab separately, but we inject instead a Set of tabs. This removes the requirement for the frame to know exactly which tabs exist and makes the code somewhat simpler. We still have to specify which tabs go in this frame though. This is done in the Guice Module:</p>
-<pre><code class="language-java">public class UIModule extends AbstractModule {
+<p>Now we are not injecting each tab separately, but we inject instead a Set of tabs. This removes the requirement for the frame to know exactly which tabs exist and makes the code somewhat simpler. We still have to specify which tabs go in this frame though. This is done in the Guice Module:</p><pre><code class="language-java">public class UIModule extends AbstractModule {
 
     @Override
     protected void configure() {
@@ -99,17 +93,12 @@ public MainFrame(Set&lt;JComponent&gt; panels)
     }
 }
 </code></pre>
-<p>So what has really changed? We moved the list of panels from one piece of Java code to another piece of Java code. It’s still Java code and this didn’t help one bit to implement a plugin architecture.</p>
-<p>This is where the multi-module aspect of the Multibinder comes in. When a different Guice module defines a binder for the same type (in this case <code>Set&lt;JComponent&gt;</code>), they will be merged. At runtime, there will only be one <code>Set&lt;JComponent&gt;</code> and all tabs from all Modules will be presented in the frame.</p>
-<p><code>Set&lt;JComponent&gt;</code> is a little to generic of a type to be using for this purpose though. We want to do more with this. We need (at a minimum) to specify a name and a way to get a reference to the actual <code>JComponent</code> so lets start by defining an interface:</p>
-<pre><code class="language-java">public interface UITab {
+<p>So what has really changed? We moved the list of panels from one piece of Java code to another piece of Java code. It’s still Java code and this didn’t help one bit to implement a plugin architecture.</p><p>This is where the multi-module aspect of the Multibinder comes in. When a different Guice module defines a binder for the same type (in this case <code>Set&lt;JComponent&gt;</code>), they will be merged. At runtime, there will only be one <code>Set&lt;JComponent&gt;</code> and all tabs from all Modules will be presented in the frame.</p><p><code>Set&lt;JComponent&gt;</code> is a little to generic of a type to be using for this purpose though. We want to do more with this. We need (at a minimum) to specify a name and a way to get a reference to the actual <code>JComponent</code> so lets start by defining an interface:</p><pre><code class="language-java">public interface UITab {
     public String getUITabName();
     public JComponent getUITabComponent();
 }
 </code></pre>
-<p>This interface defines a few methods we’ll need to display our tabs. <code>getUITabName</code> should return the display name for the tab and <code>getUITabComponent</code> is expected to return a reference to the actual UI component.</p>
-<p>Each Panel class can now implement this interface, like so:</p>
-<pre><code class="language-java">public class Panel1 extends JPanel implements UITab {
+<p>This interface defines a few methods we’ll need to display our tabs. <code>getUITabName</code> should return the display name for the tab and <code>getUITabComponent</code> is expected to return a reference to the actual UI component.</p><p>Each Panel class can now implement this interface, like so:</p><pre><code class="language-java">public class Panel1 extends JPanel implements UITab {
     public String getUITabName() {
         return &quot;Panel 1&quot;;
     }
@@ -119,8 +108,7 @@ public MainFrame(Set&lt;JComponent&gt; panels)
     }
 }
 </code></pre>
-<p>Each Panel can now be defined in its own module like this:</p>
-<pre><code class="language-java">public class Panel1Module extends AbstractModule {
+<p>Each Panel can now be defined in its own module like this:</p><pre><code class="language-java">public class Panel1Module extends AbstractModule {
     @Override
     protected void configure() {
         Multibinder&lt;UITab&gt; panels = Multibinder.newSetBinder(binder(), UITab.class);
@@ -128,8 +116,7 @@ public MainFrame(Set&lt;JComponent&gt; panels)
     }
 }
 </code></pre>
-<p>Now that each of the panels is defined in its own module, we can split them out into separate projects (plugins). Each Panel can get its own jar file. All we still need is a way for the main application to detect the available plugins and load them. The <a href="http://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html">ServiceLoader</a> class is a good possibility. Some classpath detection of an appliction specific plugin descriptor or an XML file listing all installed plugins are also possible.</p>
-            
+<p>Now that each of the panels is defined in its own module, we can split them out into separate projects (plugins). Each Panel can get its own jar file. All we still need is a way for the main application to detect the available plugins and load them. The <a href="http://docs.oracle.com/javase/6/docs/api/java/util/ServiceLoader.html">ServiceLoader</a> class is a good possibility. Some classpath detection of an appliction specific plugin descriptor or an XML file listing all installed plugins are also possible.</p>            
          </div>
 
             <footer class="wrapper post__footer">
@@ -230,6 +217,7 @@ public MainFrame(Set&lt;JComponent&gt; panels)
             }
         }
     </script>
+
 
 
 </body>

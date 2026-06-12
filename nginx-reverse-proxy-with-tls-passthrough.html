@@ -5,18 +5,19 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>NGINX reverse proxy with TLS passthrough - gerco.dev </title>
-        <meta name="description" content="Like many other developers and tinkerers, I run a few services on my home server that I would like to access from the public internet when I’m not home. A good way to host many services on a single IPv4 address is to employ a&hellip;" />
+        <meta name="description" content="Like many other developers and tinkerers, I run a few services on my home server that I would like to access from the public internet when I’m not home. A good way to host many services on a single IPv4 address is to employ a&hellip;">
          
-        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <meta name="generator" content="Publii Open-Source CMS for Static Site">
+
         <link rel="canonical" href="https://gerco.dev/nginx-reverse-proxy-with-tls-passthrough.html">
         
-        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
-<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" title="gerco.dev - RSS">
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" title="gerco.dev - JSON">
 
         
         <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
         <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
-        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/nginx-reverse-proxy-with-tls-passthrough.html"},"headline":"NGINX reverse proxy with TLS passthrough","datePublished":"2019-03-01T19:19","dateModified":"2022-02-22T19:20","description":"Like many other developers and tinkerers, I run a few services on my home server that I would like to access from the public internet when I’m not home. A good way to host many services on a single IPv4 address is to employ a&hellip;","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/nginx-reverse-proxy-with-tls-passthrough.html"},"headline":"NGINX reverse proxy with TLS passthrough","datePublished":"2019-03-01T19:19-05:00","dateModified":"2022-02-22T19:20-05:00","description":"Like many other developers and tinkerers, I run a few services on my home server that I would like to access from the public internet when I’m not home. A good way to host many services on a single IPv4 address is to employ a&hellip;","author":{"@type":"Person","name":"Gerco Dries","url":"https://gerco.dev/authors/gerco-dries/"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
         
         
     </head>
@@ -47,11 +48,7 @@
          </div>
 
          <div class="wrapper post__entry">           
-            <p>Like many other developers and tinkerers, I run a few services on my home server that I would like to access from the public internet when I’m not home. A good way to host many services on a single IPv4 address is to employ a reverse proxy, I use <a href="https://www.nginx.com">NGINX</a> for that purpose. A combination of NGINX and a few shell scripts results in a system with automatically updating TLS certificates using <a href="https://letsencrypt.org">Let’s Encrypt</a>, hosting services under many virtual (sub)domains and URLs. For example <a href="https://cloud.myname.com">https://cloud.myname.com</a>, <a href="https://home.myname.com/someservice">https://home.myname.com/someservice</a>, etc.</p>
-<p>In the last few years, more and more services now natively support Let’s Encrypt and that makes it very easy to protect them with a TLS certificate. To use the built-in Let’s Encrypt support for those services it’s often necessary for them to be the only service on port 443. They manage their own keys and certificates so it’s difficult to host more than one service on any IPv4 address.</p>
-<p>NGINX has a convenient feature that allows proxied services to directly manage their own certificates without needing the proxy server to be aware of the encryption keys: <a href="http://nginx.org/en/docs/stream/ngx_stream_core_module.html">streams</a>. The feature can even be combined with the regular https proxy for maximum flexibility:</p>
-<p>The relevant configuration is as follows:</p>
-<pre><code>stream {
+            <p>Like many other developers and tinkerers, I run a few services on my home server that I would like to access from the public internet when I’m not home. A good way to host many services on a single IPv4 address is to employ a reverse proxy, I use <a href="https://www.nginx.com">NGINX</a> for that purpose. A combination of NGINX and a few shell scripts results in a system with automatically updating TLS certificates using <a href="https://letsencrypt.org">Let’s Encrypt</a>, hosting services under many virtual (sub)domains and URLs. For example <a href="https://cloud.myname.com">https://cloud.myname.com</a>, <a href="https://home.myname.com/someservice">https://home.myname.com/someservice</a>, etc.</p><p>In the last few years, more and more services now natively support Let’s Encrypt and that makes it very easy to protect them with a TLS certificate. To use the built-in Let’s Encrypt support for those services it’s often necessary for them to be the only service on port 443. They manage their own keys and certificates so it’s difficult to host more than one service on any IPv4 address.</p><p>NGINX has a convenient feature that allows proxied services to directly manage their own certificates without needing the proxy server to be aware of the encryption keys: <a href="http://nginx.org/en/docs/stream/ngx_stream_core_module.html">streams</a>. The feature can even be combined with the regular https proxy for maximum flexibility:</p><p>The relevant configuration is as follows:</p><pre><code>stream {
         map $ssl_preread_server_name $name {
                 pbx.mydomain.com  pbx;
                 default           yxorp;
@@ -73,9 +70,7 @@
         }
 }
 </code></pre>
-<p>This is a hypothetical configuration for a <a href="https://www.freepbx.org">FreePBX</a> server that’s managing its own certificate and a <a href="https://nextcloud.com">Nextcloud</a> instance where the certificate is managed by the reverse proxy server. The DNS A records for pbx.mydomain.com and cloud.mydomain.com are both pointing to the same IPv4 address.</p>
-<p>The <code>stream</code> section reads the server name the TLS client wants to connect to and then decides to which <code>upstream</code> the connection will be forwarded. If the client wants to connect to “pbx.mydomain.com”, the connection is proxied directly to the FreePBX server at 10.1.2.3. This allows the FreePBX server to terminate the TLS connection and be in complete control of its certificates and encryption keys.</p>
-<pre><code>server {
+<p>This is a hypothetical configuration for a <a href="https://www.freepbx.org">FreePBX</a> server that’s managing its own certificate and a <a href="https://nextcloud.com">Nextcloud</a> instance where the certificate is managed by the reverse proxy server. The DNS A records for pbx.mydomain.com and cloud.mydomain.com are both pointing to the same IPv4 address.</p><p>The <code>stream</code> section reads the server name the TLS client wants to connect to and then decides to which <code>upstream</code> the connection will be forwarded. If the client wants to connect to “pbx.mydomain.com”, the connection is proxied directly to the FreePBX server at 10.1.2.3. This allows the FreePBX server to terminate the TLS connection and be in complete control of its certificates and encryption keys.</p><pre><code>server {
         listen 1443 ssl http2;
 
         server_name cloud.mydomain.com;
@@ -89,19 +84,16 @@
         }
 }
 </code></pre>
-<p>If the client wants to connect to a different domain name, the connection is proxied to localhost:1443 where the second configuration comes in. All the <code>server</code> sections that would normally be defined to listen on port 443 are listening to port 1443 instead. Since the <code>stream</code> server forwards all unknown domain names to this port, all domains configured as virtual hosts will work as normal.</p>
-<pre><code>server {
-    listen        80;
-    server_name    pbx.mydomain.com;
+<p>If the client wants to connect to a different domain name, the connection is proxied to localhost:1443 where the second configuration comes in. All the <code>server</code> sections that would normally be defined to listen on port 443 are listening to port 1443 instead. Since the <code>stream</code> server forwards all unknown domain names to this port, all domains configured as virtual hosts will work as normal.</p><pre><code>server {
+    listen		80;
+    server_name	pbx.mydomain.com;
 
     location .well-known {
         proxy_pass http://10.1.2.3:80/.well-known;
     }
 }
 </code></pre>
-<p>Lastly, the Let’s Encrypt service needs to be able to access the <code>.well-known</code> directory on the FreePBX server for verification purposes. The FreePBX server will create a local file that Let’s Encrypt will need to access. To make that possible, we define an extra <code>server</code> segment on port 80 for that hostname to ensure that the automatic domain validation can succeed.</p>
-<p>This approach does have a serious downside: The applications behind the reverse proxy will lose the ability to determine the real IP address of their clients. All connections to the proxied services will be made by the reverse proxy so they will only see the proxy’s address. This can normally be worked around by using the <code>X-Forwarded-For</code> header, but due to the use of the <code>stream</code> server as the point of entry, this is no longer possible.</p>
-            
+<p>Lastly, the Let’s Encrypt service needs to be able to access the <code>.well-known</code> directory on the FreePBX server for verification purposes. The FreePBX server will create a local file that Let’s Encrypt will need to access. To make that possible, we define an extra <code>server</code> segment on port 80 for that hostname to ensure that the automatic domain validation can succeed.</p><p>This approach does have a serious downside: The applications behind the reverse proxy will lose the ability to determine the real IP address of their clients. All connections to the proxied services will be made by the reverse proxy so they will only see the proxy’s address. This can normally be worked around by using the <code>X-Forwarded-For</code> header, but due to the use of the <code>stream</code> server as the point of entry, this is no longer possible.</p>            
          </div>
 
             <footer class="wrapper post__footer">
@@ -212,6 +204,7 @@
             }
         }
     </script>
+
 
 
 </body>

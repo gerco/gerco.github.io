@@ -5,18 +5,19 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>Server Name Indication - gerco.dev </title>
-        <meta name="description" content="Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In&hellip;" />
+        <meta name="description" content="Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In&hellip;">
          
-        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <meta name="generator" content="Publii Open-Source CMS for Static Site">
+
         <link rel="canonical" href="https://gerco.dev/server-name-indication.html">
         
-        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
-<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" title="gerco.dev - RSS">
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" title="gerco.dev - JSON">
 
         
         <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
         <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
-        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/server-name-indication.html"},"headline":"Server Name Indication","datePublished":"2018-09-17T19:18","dateModified":"2022-02-22T19:19","description":"Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In&hellip;","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/server-name-indication.html"},"headline":"Server Name Indication","datePublished":"2018-09-17T19:18-04:00","dateModified":"2022-02-22T19:19-05:00","description":"Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In&hellip;","author":{"@type":"Person","name":"Gerco Dries","url":"https://gerco.dev/authors/gerco-dries/"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
         
         
     </head>
@@ -47,16 +48,12 @@
          </div>
 
          <div class="wrapper post__entry">           
-            <p>Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In 2003, an extension was added to the protocol (Server Name Indication, SNI) to resolve this issue and allow a server to serve the correct certificate for the host name a client is expecting (<a href="https://www.ietf.org/rfc/rfc3546.txt">RFC 3546</a>).</p>
-<p>There is still some old software around that does not support SNI so servers still may have to deal with clients that do and do not support SNI. They do this by configuring one certificate for each domain name for clients that support SNI and a single certificate with an alternative name for each of the configured domains for clients that don’t. For example: If a server is responsible for three domain names:</p>
-<ul>
+            <p>Historically, SSL servers could only install a single certificate per IP address. There was no way for a client to specify which domain name they were trying to connect to before completing the SSL negotiations. This effectively made shared hosting impossible while using SSL. In 2003, an extension was added to the protocol (Server Name Indication, SNI) to resolve this issue and allow a server to serve the correct certificate for the host name a client is expecting (<a href="https://www.ietf.org/rfc/rfc3546.txt">RFC 3546</a>).</p><p>There is still some old software around that does not support SNI so servers still may have to deal with clients that do and do not support SNI. They do this by configuring one certificate for each domain name for clients that support SNI and a single certificate with an alternative name for each of the configured domains for clients that don’t. For example: If a server is responsible for three domain names:</p><ul>
 <li>domain1.com</li>
 <li>domain2.com</li>
 <li>domain3.com</li>
 </ul>
-<p>There would be four certificates configured on that server. One for each of the above domain names and another one that contains all three of the domains as alternative names (SANs).</p>
-<p>Issues with SNI will often appear as cases where some clients will be able to connect and some will not be able to without any clear indications as to why. When checking the certificate with a browser, the correct certificate will appear to be served because the browser supports SNI. In order to check which certificate is served with- and without SNI, use the following commands:</p>
-<table>
+<p>There would be four certificates configured on that server. One for each of the above domain names and another one that contains all three of the domains as alternative names (SANs).</p><p>Issues with SNI will often appear as cases where some clients will be able to connect and some will not be able to without any clear indications as to why. When checking the certificate with a browser, the correct certificate will appear to be served because the browser supports SNI. In order to check which certificate is served with- and without SNI, use the following commands:</p><table>
 <thead>
 <tr>
 <th align="left">Scenario</th>
@@ -72,8 +69,7 @@
 <td align="left"><code>openssl s_client -connect domain1.com:443 -servername domain1.com</code></td>
 </tr>
 </tbody></table>
-<p>OpenSSL will print out the server’s certificate in base64 encoding. Copy that to a file and use <code>openssl x509 -in domain1.crt -text</code> to convert it to a more readable format in order to check the certificate contents.</p>
-            
+<p>OpenSSL will print out the server’s certificate in base64 encoding. Copy that to a file and use <code>openssl x509 -in domain1.crt -text</code> to convert it to a more readable format in order to check the certificate contents.</p>            
          </div>
 
             <footer class="wrapper post__footer">
@@ -184,6 +180,7 @@
             }
         }
     </script>
+
 
 
 </body>

@@ -5,18 +5,19 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1">
             <title>X Forwarding - gerco.dev </title>
-        <meta name="description" content="I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least&hellip;" />
+        <meta name="description" content="I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least&hellip;">
          
-        <meta name="generator" content="Publii Open-Source CMS for Static Site" />
+        <meta name="generator" content="Publii Open-Source CMS for Static Site">
+
         <link rel="canonical" href="https://gerco.dev/x-forwarding.html">
         
-        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" />
-<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" />
+        <link rel="alternate" type="application/atom+xml" href="https://gerco.dev/feed.xml" title="gerco.dev - RSS">
+<link rel="alternate" type="application/json" href="https://gerco.dev/feed.json" title="gerco.dev - JSON">
 
         
         <style>:root{--body-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--heading-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--logo-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol";--menu-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,"Fira Sans","Droid Sans","Helvetica Neue",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol"}</style>
         <link rel="stylesheet" href="https://gerco.dev/assets/css/style.css?v=8ed283c5b2ce11ac891b9f019f71b07a">
-        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/x-forwarding.html"},"headline":"X Forwarding","datePublished":"2017-06-10T19:11","dateModified":"2022-02-22T19:11","description":"I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least&hellip;","author":{"@type":"Person","name":"Gerco Dries"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
+        <script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://gerco.dev/x-forwarding.html"},"headline":"X Forwarding","datePublished":"2017-06-10T19:11-04:00","dateModified":"2022-02-22T19:11-05:00","description":"I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least&hellip;","author":{"@type":"Person","name":"Gerco Dries","url":"https://gerco.dev/authors/gerco-dries/"},"publisher":{"@type":"Organization","name":"Gerco Dries"}}</script>
         
         
     </head>
@@ -47,9 +48,7 @@
          </div>
 
          <div class="wrapper post__entry">           
-            <p>I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least 7GB free to even start up). The way I set this up, though quite straightforward, may be useful to other developers with similar memory requirements. </p>
-<p>I needed 12Gb of VM RAM for this project because I also had to run a a different VM (call that S) with 4GB minimum RAM. Since my laptop has 16GB and the host OS also needs a heap of RAM, I didn’t have room for a desktop environment in the Linux VM for R.</p>
-<h3 id="ingredients">Ingredients</h3>
+            <p>I needed to set up a development environment on Linux for a customer project. This needed to run on Linux since one of my dependencies (let’s call it R) runs only on Linux and the VM needed an abundance of memory (R needs at least 7GB free to even start up). The way I set this up, though quite straightforward, may be useful to other developers with similar memory requirements. </p><p>I needed 12Gb of VM RAM for this project because I also had to run a a different VM (call that S) with 4GB minimum RAM. Since my laptop has 16GB and the host OS also needs a heap of RAM, I didn’t have room for a desktop environment in the Linux VM for R.</p><h3 id="ingredients">Ingredients</h3>
 <ul>
 <li>   VirtualBox (or something similar)</li>
 <li>   SSH with X forwarding</li>
@@ -64,10 +63,7 @@
 <li>   Disable the GUI at startup to free up memory for R: <code>systemctl set-default multi-user.target</code></li>
 </ol>
 <h3 id="usage">Usage</h3>
-<p>To use this setup for development just start your VM headless, SSH into it and run:</p>
-<p><code>$ ~/eclipse/cpp-neon/eclipse/eclipse &amp;</code></p>
-<p>And eclipse will start up on your host desktop. It will run as if it was running on your host machine. Because you’re not running a full desktop environment on the VM, there will be enough memory for R, S and your host operating system to run.</p>
-            
+<p>To use this setup for development just start your VM headless, SSH into it and run:</p><p><code>$ ~/eclipse/cpp-neon/eclipse/eclipse &amp;</code></p><p>And eclipse will start up on your host desktop. It will run as if it was running on your host machine. Because you’re not running a full desktop environment on the VM, there will be enough memory for R, S and your host operating system to run.</p>            
          </div>
 
             <footer class="wrapper post__footer">
@@ -178,6 +174,7 @@
             }
         }
     </script>
+
 
 
 </body>
